@@ -1,0 +1,24 @@
+body {
+  font: 10px sans-serif;
+}
+
+path.dot {
+  fill: white;
+  stroke-width: 1.5px;
+}
+
+rect {
+  fill: null;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+
+.x line, .y line {
+  stroke: #ccc;
+  shape-rendering: crispEdges;
+}
+
+rect.block {
+  fill: #ccc;
+  shape-rendering: crispEdges;
+}
