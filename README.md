@@ -18,5 +18,5 @@ Dependencies:
 
 Building
 
-    coffee -wco js/ src/monty.coffee
+    coffee -bwco js/ src/*.coffee
    

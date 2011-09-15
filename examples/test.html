@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <header>
+     <script src="http://mbostock.github.com/d3/d3.js" type="text/javascript" ></script>    
+  </header>
+  <body>
+  <script type='text/javascript'>
+    
+    function draw(unnested_data) {
+      
+      var nesting = d3.nest().key( function(d) { return d % 2; });
+      
+      data = nesting.entries(unnested_data)
+      
+      var lists = d3.select("body").selectAll("ul")
+        .data(data,function(d,i) { return d.key; });
+                  
+      lists.enter().append("ul")
+        .attr("class",function(d) { return d.key });
+
+
+      var lines = lists.selectAll("li")
+        .data(function(d) { return d.values}, function(d,i) { return d; });
+        
+      lines.enter().append("li")
+        .text(function(d, i) { console.log("Adding "+d); return d; });                    
+    }
+    
+    console.log("First draw");
+    draw( [ 0, 1, 2, 3, 4, 5, 6   ]);
+    console.log("Update");
+    draw( [ 0, 1, 2, 3, 4, 5, 6, 7 ]);    
+  </script>
+  </body>
+</html>

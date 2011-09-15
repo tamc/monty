@@ -19,6 +19,10 @@ rect {
 }
 
 rect.block {
-  fill: #ccc;
+  fill: #FF0;
   shape-rendering: crispEdges;
+}
+
+rect.old {
+  fill: #ccc;
 }
