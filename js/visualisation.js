@@ -13,7 +13,7 @@ histogram = function(tag, mean, standard_deviation, data) {
   yrule = svg.selectAll("g.y").data(y.ticks(10)).enter().append("svg:g").attr("class", "y");
   yrule.append("svg:line").attr("x1", 0).attr("x2", w).attr("y1", y).attr("y2", y);
   yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(y.tickFormat(10));
-  svg.append("svg:rect").attr("width", w).attr("height", h);
+  svg.append("svg:rect").attr("width", w).attr("height", h + 1);
   nesting_operator = d3.nest().key(function(d) {
     return d.technology.capital_cost;
   });
@@ -38,7 +38,8 @@ histogram = function(tag, mean, standard_deviation, data) {
     }).attr("class", "value");
     values.exit().remove();
     frequencies = values.selectAll("rect").data(values_to_frequencies, iteration_to_id);
-    return frequencies.enter().append("svg:rect").classed("block", true).attr("x", function(d, i) {
+    frequencies.classed('newblock', false);
+    return frequencies.enter().append("svg:rect").classed("block", true).classed('newblock', true).attr("x", function(d, i) {
       console.log("Adding " + d.id);
       return x(d.technology.capital_cost);
     }).attr("y", function(d, i) {

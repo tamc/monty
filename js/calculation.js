@@ -52,7 +52,7 @@ iteration = function(id, technology, investors, environment) {
 };
 this.onmessage = function(data) {
   var i;
-  for (i = 1; i <= 5000; i++) {
+  for (i = 1; i <= 500; i++) {
     this.postMessage(new iteration(i, new technology, new investors, new environment));
     false;
   }

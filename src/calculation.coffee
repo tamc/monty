@@ -48,7 +48,7 @@ iteration = (@id,@technology,@investors,@environment) ->
   return this
 
 @onmessage = (data) ->
-  for i in [1..5000]
+  for i in [1..500]
     @postMessage(new iteration(i,new technology, new investors, new environment))
     false
   @close

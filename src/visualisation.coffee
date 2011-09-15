@@ -52,7 +52,7 @@ histogram = (tag,mean,standard_deviation,data) ->
   # Add the black box surround
   svg.append("svg:rect")
       .attr("width", w)
-      .attr("height", h);
+      .attr("height", h+1);
   
   # Add a normal distribution line
   # svg.selectAll('path.normal')
@@ -89,10 +89,11 @@ histogram = (tag,mean,standard_deviation,data) ->
     frequencies = values.selectAll("rect")
         .data(values_to_frequencies,iteration_to_id)       
     
-#    frequencies.classed('block',false)
+    frequencies.classed('newblock',false)
       
     frequencies.enter().append("svg:rect")
         .classed("block",true)
+        .classed('newblock',true)
         .attr("x", (d,i) -> console.log("Adding #{d.id}"); x(d.technology.capital_cost) )
         .attr("y", (d,i) -> y(i)-block_height )
         .attr("width",block_width)
