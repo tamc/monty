@@ -1,8 +1,8 @@
 var draw, histogram;
 histogram = function(tag, mean, standard_deviation, property) {
   var block_height, block_width, h, iteration_to_id, nesting_operator, p, svg, values_to_frequencies, values_to_ids, w, x, xrule, y, yrule;
-  w = 450;
-  h = 450;
+  w = 250;
+  h = 250;
   p = 20;
   x = d3.scale.linear().domain([mean - 3 * standard_deviation, mean + 3 * standard_deviation]).range([0, w]);
   y = d3.scale.linear().domain([0, 0.2 * 200]).range([h, 0]);
@@ -30,32 +30,39 @@ histogram = function(tag, mean, standard_deviation, property) {
     var buckets, frequencies, values;
     buckets = nesting_operator.entries(data);
     values = svg.selectAll("g.value").data(buckets, values_to_ids);
-    values.enter().append("svg:g").attr("x", function(d) {
-      console.log("Adding group " + d.key);
-      return 1;
-    }).attr("class", "value");
+    values.enter().append("svg:g").attr("class", "value");
     values.exit().remove();
     frequencies = values.selectAll("rect").data(values_to_frequencies, iteration_to_id);
     frequencies.classed('newblock', false);
-    return frequencies.enter().append("svg:rect").classed("block", true).classed('newblock', true).attr("x", function(d, i) {
-      console.log("Adding " + d.id);
+    frequencies.enter().append("svg:rect").classed("block", true).classed('newblock', true).attr("x", function(d, i) {
       return x(property(d));
     }).attr("y", function(d, i) {
       return y(i) - block_height;
     }).attr("width", block_width).attr("height", block_height);
+    return frequencies.exit().remove();
   };
   return this;
 };
 draw = function() {
-  var hist, iterations, worker;
-  hist = new histogram("#histogram", 100, 20, function(d) {
-    return d.technology.capital_cost;
-  });
+  var histograms, iterations, worker;
+  histograms = [
+    new histogram("#capital", 100, 20, function(d) {
+      return d.technology.capital_cost;
+    }), new histogram("#operating", 100, 60, function(d) {
+      return d.technology.operating_cost;
+    })
+  ];
   iterations = [];
   worker = new Worker('../js/calculation.js');
   worker.onmessage = function(event) {
+    var histogram, _i, _len, _results;
     iterations.push(event.data);
-    return hist.update(iterations);
+    _results = [];
+    for (_i = 0, _len = histograms.length; _i < _len; _i++) {
+      histogram = histograms[_i];
+      _results.push(histogram.update(iterations));
+    }
+    return _results;
   };
   worker.onerror = function(error) {
     console.log("Calculation error: " + error.message + "\n");

@@ -2,6 +2,16 @@
 randomNormalValue = () ->
   # A poor man's approximation!
   (Math.random()*2-1)+(Math.random()*2-1)+(Math.random()*2-1)
+  # Polar Box-Muller
+  # while r >= 1.0 || r == undefined
+  #   x1 = 2.0 * Math.random() - 1.0;
+  #   x2 = 2.0 * Math.random() - 1.0;
+  #   r = x1 * x1 + x2 * x2;
+  # 
+  #  s = Math.sqrt( (-2.0 * Math.log( r ) ) / r );
+  #  y1 = x1 * s
+  #  y2 = x2 * s
+  #  y1
   
 randomValue = (mean,standard_deviation,precision = 1) ->
   Math.round(((randomNormalValue() * standard_deviation) + mean)/precision) * precision

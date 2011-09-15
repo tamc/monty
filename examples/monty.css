@@ -19,7 +19,7 @@ rect {
 }
 
 rect.block {
-  fill: #eee;
+  fill: #aaa;
   stroke: #aaa;
   shape-rendering: crispEdges;
 }
