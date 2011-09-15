@@ -1,5 +1,5 @@
 var draw, histogram;
-histogram = function(tag, mean, standard_deviation, data) {
+histogram = function(tag, mean, standard_deviation, property) {
   var block_height, block_width, h, iteration_to_id, nesting_operator, p, svg, values_to_frequencies, values_to_ids, w, x, xrule, y, yrule;
   w = 450;
   h = 450;
@@ -14,9 +14,7 @@ histogram = function(tag, mean, standard_deviation, data) {
   yrule.append("svg:line").attr("x1", 0).attr("x2", w).attr("y1", y).attr("y2", y);
   yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(y.tickFormat(10));
   svg.append("svg:rect").attr("width", w).attr("height", h + 1);
-  nesting_operator = d3.nest().key(function(d) {
-    return d.technology.capital_cost;
-  });
+  nesting_operator = d3.nest().key(property);
   block_width = x(1) - x(0);
   block_height = y(0) - y(1);
   values_to_ids = function(d) {
@@ -41,7 +39,7 @@ histogram = function(tag, mean, standard_deviation, data) {
     frequencies.classed('newblock', false);
     return frequencies.enter().append("svg:rect").classed("block", true).classed('newblock', true).attr("x", function(d, i) {
       console.log("Adding " + d.id);
-      return x(d.technology.capital_cost);
+      return x(property(d));
     }).attr("y", function(d, i) {
       return y(i) - block_height;
     }).attr("width", block_width).attr("height", block_height);
@@ -50,7 +48,9 @@ histogram = function(tag, mean, standard_deviation, data) {
 };
 draw = function() {
   var hist, iterations, worker;
-  hist = new histogram("#histogram", 100, 20);
+  hist = new histogram("#histogram", 100, 20, function(d) {
+    return d.technology.capital_cost;
+  });
   iterations = [];
   worker = new Worker('../js/calculation.js');
   worker.onmessage = function(event) {

@@ -1,5 +1,5 @@
 # Drawing function
-histogram = (tag,mean,standard_deviation,data) ->
+histogram = (tag,mean,standard_deviation,property) ->
   w = 450
   h = 450
   p = 20
@@ -63,7 +63,7 @@ histogram = (tag,mean,standard_deviation,data) ->
   #         .x((d) -> console.log(d); x(d))
   #         .y((d) -> y(normalZ(d,mean,standard_deviation))))
   
-  nesting_operator = d3.nest().key((d) -> d.technology.capital_cost)
+  nesting_operator = d3.nest().key(property)
   block_width = x(1)-x(0)
   block_height = y(0)-y(1)
   values_to_ids = (d) -> d.key
@@ -94,7 +94,7 @@ histogram = (tag,mean,standard_deviation,data) ->
     frequencies.enter().append("svg:rect")
         .classed("block",true)
         .classed('newblock',true)
-        .attr("x", (d,i) -> console.log("Adding #{d.id}"); x(d.technology.capital_cost) )
+        .attr("x", (d,i) -> console.log("Adding #{d.id}"); x(property(d)) )
         .attr("y", (d,i) -> y(i)-block_height )
         .attr("width",block_width)
         .attr("height",block_height)
@@ -102,7 +102,7 @@ histogram = (tag,mean,standard_deviation,data) ->
   this
       
 draw = () ->
-  hist = new histogram("#histogram",100,20)
+  hist = new histogram("#histogram",100,20, (d) -> d.technology.capital_cost )
   iterations = []
   worker = new Worker('../js/calculation.js')
   worker.onmessage = (event) ->
