@@ -46,8 +46,8 @@ iteration = function(id, technology, investors, environment) {
     return this.technology.capital_cost * this.investors.hurdle_rate * Math.pow(1 + this.investors.hurdle_rate, this.investors.loan_period) / (Math.pow(1 + this.investors.hurdle_rate, this.investors.loan_period) - 1);
   };
   this.deployment = this.isTechnologyBuilt() * this.investors.quantity;
-  this.publicSpend = this.deployment * this.environment.subsidy;
   this.energyDelivered = this.deployment * this.technology.output;
+  this.publicSpend = this.deployment * this.environment.subsidy;
   return this;
 };
 this.onmessage = function(data) {

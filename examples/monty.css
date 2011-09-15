@@ -33,6 +33,15 @@ rect.old {
   fill: #ccc;
 }
 
+div.chartGroup h1 {
+}
+
 div.histogram {
   float: left;
+}
+
+div.histogram h2 {
+  padding: 20;
+  text-align: center;
+  margin-bottom: 0;
 }

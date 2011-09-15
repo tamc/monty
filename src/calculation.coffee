@@ -51,8 +51,8 @@ iteration = (@id,@technology,@investors,@environment) ->
     @technology.capital_cost * @investors.hurdle_rate * Math.pow(1+@investors.hurdle_rate,@investors.loan_period) / ( Math.pow(1+@investors.hurdle_rate,@investors.loan_period) - 1)
 
   @deployment = @isTechnologyBuilt() * @investors.quantity
-  @publicSpend = @deployment * @environment.subsidy
   @energyDelivered = @deployment * @technology.output
+  @publicSpend = @deployment * @environment.subsidy
   
     
   return this

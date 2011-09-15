@@ -1,13 +1,16 @@
 # Drawing function
-histogram = (tag,mean,standard_deviation,property) ->
+histogram = (tag,title,mean,standard_deviation,property) ->
   w = 250
   h = 250
   p = 20
   x = d3.scale.linear().domain([mean - 3*standard_deviation,mean + 3*standard_deviation]).range([0, w])
   y = d3.scale.linear().domain([0,0.2*200]).range([h, 0])
   
-  svg = d3.select(tag)
-    .append("svg:svg")
+  tag = d3.select(tag)
+  
+  tag.append("h2").text(title)
+  
+  svg = tag.append("svg:svg")
       .attr("width", w + p * 2)
       .attr("height", h + p * 2)
     .append("svg:g")
@@ -104,10 +107,18 @@ histogram = (tag,mean,standard_deviation,property) ->
       
 draw = () ->
   histograms = [
-    new histogram("#capital",100,20, (d) -> d.technology.capital_cost ),
-    new histogram("#operating",100,60, (d) -> d.technology.operating_cost )
-    new histogram("#fuel",100,60, (d) -> d.technology.fuel_cost )
-    new histogram("#output",100,60, (d) -> d.technology.output )
+    # Inputs
+    new histogram("#capital","Capital cost",100,20, (d) -> d.technology.capital_cost ),
+    new histogram("#operating","Operating cost",100,60, (d) -> d.technology.operating_cost ),
+    new histogram("#fuel","Fuel cost",100,60, (d) -> d.technology.fuel_cost ),
+    new histogram("#output","Output",100,60, (d) -> d.technology.output ),
+    new histogram("#hurdle","Hurdle rate",0.1,0.03, (d) -> d.investors.hurdle_rate ),
+    new histogram("#quantity","Investors",100,60, (d) -> d.investors.quantity ),
+    new histogram("#price","Price",100,60, (d) -> d.environment.price ),
+    # Dependent variables
+    new histogram("#deployment","Quantity deployed",100,60, (d) -> d.deployment ),
+    new histogram("#energyDelivered","Energy delivered",100,60, (d) -> d.energyDelivered ),
+    new histogram("#publicSpend","Public expenditure",100,60, (d) -> d.publicSpend ),
 
   ]
 

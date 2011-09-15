@@ -1,12 +1,14 @@
 var draw, histogram;
-histogram = function(tag, mean, standard_deviation, property) {
+histogram = function(tag, title, mean, standard_deviation, property) {
   var block_height, block_width, h, iteration_to_id, nesting_operator, p, svg, values_to_frequencies, values_to_ids, w, x, xrule, y, yrule;
   w = 250;
   h = 250;
   p = 20;
   x = d3.scale.linear().domain([mean - 3 * standard_deviation, mean + 3 * standard_deviation]).range([0, w]);
   y = d3.scale.linear().domain([0, 0.2 * 200]).range([h, 0]);
-  svg = d3.select(tag).append("svg:svg").attr("width", w + p * 2).attr("height", h + p * 2).append("svg:g").attr("transform", "translate(" + p + "," + p + ")");
+  tag = d3.select(tag);
+  tag.append("h2").text(title);
+  svg = tag.append("svg:svg").attr("width", w + p * 2).attr("height", h + p * 2).append("svg:g").attr("transform", "translate(" + p + "," + p + ")");
   xrule = svg.selectAll("g.x").data(x.ticks(10)).enter().append("svg:g").attr("class", "x");
   xrule.append("svg:line").attr("x1", x).attr("x2", x).attr("y1", 0).attr("y2", h);
   xrule.append("svg:text").attr("x", x).attr("y", h + 3).attr("dy", ".71em").attr("text-anchor", "middle").text(x.tickFormat(10));
@@ -46,14 +48,26 @@ histogram = function(tag, mean, standard_deviation, property) {
 draw = function() {
   var histograms, iterations, worker;
   histograms = [
-    new histogram("#capital", 100, 20, function(d) {
+    new histogram("#capital", "Capital cost", 100, 20, function(d) {
       return d.technology.capital_cost;
-    }), new histogram("#operating", 100, 60, function(d) {
+    }), new histogram("#operating", "Operating cost", 100, 60, function(d) {
       return d.technology.operating_cost;
-    }), new histogram("#fuel", 100, 60, function(d) {
+    }), new histogram("#fuel", "Fuel cost", 100, 60, function(d) {
       return d.technology.fuel_cost;
-    }), new histogram("#output", 100, 60, function(d) {
+    }), new histogram("#output", "Output", 100, 60, function(d) {
       return d.technology.output;
+    }), new histogram("#hurdle", "Hurdle rate", 0.1, 0.03, function(d) {
+      return d.investors.hurdle_rate;
+    }), new histogram("#quantity", "Investors", 100, 60, function(d) {
+      return d.investors.quantity;
+    }), new histogram("#price", "Price", 100, 60, function(d) {
+      return d.environment.price;
+    }), new histogram("#deployment", "Quantity deployed", 100, 60, function(d) {
+      return d.deployment;
+    }), new histogram("#energyDelivered", "Energy delivered", 100, 60, function(d) {
+      return d.energyDelivered;
+    }), new histogram("#publicSpend", "Public expenditure", 100, 60, function(d) {
+      return d.publicSpend;
     })
   ];
   iterations = [];
