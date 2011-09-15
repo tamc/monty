@@ -106,6 +106,9 @@ draw = () ->
   histograms = [
     new histogram("#capital",100,20, (d) -> d.technology.capital_cost ),
     new histogram("#operating",100,60, (d) -> d.technology.operating_cost )
+    new histogram("#fuel",100,60, (d) -> d.technology.fuel_cost )
+    new histogram("#output",100,60, (d) -> d.technology.output )
+
   ]
 
   iterations = []

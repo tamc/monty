@@ -50,6 +50,10 @@ draw = function() {
       return d.technology.capital_cost;
     }), new histogram("#operating", 100, 60, function(d) {
       return d.technology.operating_cost;
+    }), new histogram("#fuel", 100, 60, function(d) {
+      return d.technology.fuel_cost;
+    }), new histogram("#output", 100, 60, function(d) {
+      return d.technology.output;
     })
   ];
   iterations = [];
