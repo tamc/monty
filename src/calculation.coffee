@@ -25,7 +25,7 @@ technology = () ->
   @capital_cost   = randomValue(100,20)
   @operating_cost = randomValue(100,60)
   @fuel_cost      = randomValue(100,60)
-  @output         = randomValue(1,0.3)
+  @output         = randomValue(1,0.3,0.1)
 
 investors = () ->
   @hurdle_rate    = randomValue(0.1,0.03,0.01)

@@ -17,7 +17,7 @@ technology = function() {
   this.capital_cost = randomValue(100, 20);
   this.operating_cost = randomValue(100, 60);
   this.fuel_cost = randomValue(100, 60);
-  return this.output = randomValue(1, 0.3);
+  return this.output = randomValue(1, 0.3, 0.1);
 };
 investors = function() {
   this.hurdle_rate = randomValue(0.1, 0.03, 0.01);

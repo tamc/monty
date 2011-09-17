@@ -33,7 +33,8 @@ rect.old {
   fill: #ccc;
 }
 
-div.chartGroup h1 {
+div.chartGroup {
+  clear: both;
 }
 
 div.histogram {

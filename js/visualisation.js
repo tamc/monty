@@ -1,4 +1,4 @@
-var draw, histogram;
+var draw, histogram, scatterplot;
 histogram = function(tag, title, mean, standard_deviation, property) {
   var block_height, block_width, h, iteration_to_id, nesting_operator, p, svg, values_to_frequencies, values_to_ids, w, x, xrule, y, yrule;
   w = 250;
@@ -45,9 +45,44 @@ histogram = function(tag, title, mean, standard_deviation, property) {
   };
   return this;
 };
+scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_property) {
+  var block_height, block_width, h, iteration_to_id, p, svg, w, x, xrule, y, yrule;
+  w = 250;
+  h = 250;
+  p = 20;
+  x = d3.scale.linear().domain([x_low, x_high]).range([0, w]);
+  y = d3.scale.linear().domain([y_low, y_high]).range([h, 0]);
+  tag = d3.select(tag);
+  tag.append("h2").text(title);
+  svg = tag.append("svg:svg").attr("width", w + p * 2).attr("height", h + p * 2).append("svg:g").attr("transform", "translate(" + p + "," + p + ")");
+  xrule = svg.selectAll("g.x").data(x.ticks(10)).enter().append("svg:g").attr("class", "x");
+  xrule.append("svg:line").attr("x1", x).attr("x2", x).attr("y1", 0).attr("y2", h);
+  xrule.append("svg:text").attr("x", x).attr("y", h + 3).attr("dy", ".71em").attr("text-anchor", "middle").text(x.tickFormat(10));
+  yrule = svg.selectAll("g.y").data(y.ticks(10)).enter().append("svg:g").attr("class", "y");
+  yrule.append("svg:line").attr("x1", 0).attr("x2", w).attr("y1", y).attr("y2", y);
+  yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(y.tickFormat(10));
+  svg.append("svg:rect").attr("width", w).attr("height", h + 1);
+  iteration_to_id = function(d) {
+    return d.id;
+  };
+  block_width = x(1) - x(0);
+  block_height = y(0) - y(1);
+  this.update = function(data) {
+    var frequencies;
+    frequencies = svg.selectAll("rect.block").data(data, iteration_to_id);
+    frequencies.classed('newblock', false);
+    frequencies.enter().append("svg:rect").classed("block", true).classed('newblock', true).attr("x", function(d) {
+      return x(x_property(d));
+    }).attr("y", function(d) {
+      return y(y_property(d)) - block_height;
+    }).attr("width", block_width).attr("height", block_height);
+    return frequencies.exit().remove();
+  };
+  return this;
+};
 draw = function() {
-  var histograms, iterations, worker;
-  histograms = [
+  var charts, iterations, worker;
+  charts = [
     new histogram("#capital", "Capital cost", 100, 20, function(d) {
       return d.technology.capital_cost;
     }), new histogram("#operating", "Operating cost", 100, 60, function(d) {
@@ -68,17 +103,25 @@ draw = function() {
       return d.energyDelivered;
     }), new histogram("#publicSpend", "Public expenditure", 100, 60, function(d) {
       return d.publicSpend;
-    })
+    }), new scatterplot('#spendEnergyDelivered', "Spend against energy delivered", 0, 3000, 0, 300, (function(d) {
+      return d.publicSpend;
+    }), (function(d) {
+      return d.energyDelivered;
+    })), new scatterplot('#energyPerPoundAgainstPounds', "Energy per pound of public spend against spend", 0, 3000, 0, 10, (function(d) {
+      return d.publicSpend;
+    }), (function(d) {
+      return d.energyDelivered / d.publicSpend;
+    }))
   ];
   iterations = [];
   worker = new Worker('../js/calculation.js');
   worker.onmessage = function(event) {
-    var histogram, _i, _len, _results;
+    var chart, _i, _len, _results;
     iterations.push(event.data);
     _results = [];
-    for (_i = 0, _len = histograms.length; _i < _len; _i++) {
-      histogram = histograms[_i];
-      _results.push(histogram.update(iterations));
+    for (_i = 0, _len = charts.length; _i < _len; _i++) {
+      chart = charts[_i];
+      _results.push(chart.update(iterations));
     }
     return _results;
   };
