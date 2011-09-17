@@ -16,10 +16,6 @@ randomNormalValue = () ->
 randomValue = (mean,standard_deviation,precision = 1) ->
   Math.round(((randomNormalValue() * standard_deviation) + mean)/precision) * precision
 
-normalZ = (x,mean,standard_deviation) ->
-  a = x - Mean;
-  Math.exp(-(a * a) / (2 * standard_deviation * standard_deviation)) / (Math.sqrt(2 * Math.PI) * standard_deviation); 
-
 # The variables
 technology = () ->
   @capital_cost   = randomValue(100,20)

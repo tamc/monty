@@ -1,4 +1,4 @@
-var environment, investors, iteration, normalZ, randomNormalValue, randomValue, technology;
+var environment, investors, iteration, randomNormalValue, randomValue, technology;
 randomNormalValue = function() {
   return (Math.random() * 2 - 1) + (Math.random() * 2 - 1) + (Math.random() * 2 - 1);
 };
@@ -7,11 +7,6 @@ randomValue = function(mean, standard_deviation, precision) {
     precision = 1;
   }
   return Math.round(((randomNormalValue() * standard_deviation) + mean) / precision) * precision;
-};
-normalZ = function(x, mean, standard_deviation) {
-  var a;
-  a = x - Mean;
-  return Math.exp(-(a * a) / (2 * standard_deviation * standard_deviation)) / (Math.sqrt(2 * Math.PI) * standard_deviation);
 };
 technology = function() {
   this.capital_cost = randomValue(100, 20);

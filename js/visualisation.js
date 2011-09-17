@@ -1,6 +1,11 @@
-var draw, histogram, scatterplot;
+var draw, histogram, normalZ, scatterplot;
+normalZ = function(x, mean, standard_deviation) {
+  var a;
+  a = x - mean;
+  return Math.exp(-(a * a) / (2 * standard_deviation * standard_deviation)) / (Math.sqrt(2 * Math.PI) * standard_deviation);
+};
 histogram = function(tag, title, mean, standard_deviation, property) {
-  var block_height, block_width, h, iteration_to_id, nesting_operator, p, svg, values_to_frequencies, values_to_ids, w, x, xrule, y, yrule;
+  var block_height, block_width, h, iteration_to_id, line, nesting_operator, p, points, svg, values_to_frequencies, values_to_ids, w, x, xrule, y, yrule;
   w = 250;
   h = 250;
   p = 20;
@@ -16,6 +21,18 @@ histogram = function(tag, title, mean, standard_deviation, property) {
   yrule.append("svg:line").attr("x1", 0).attr("x2", w).attr("y1", y).attr("y2", y);
   yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(y.tickFormat(10));
   svg.append("svg:rect").attr("width", w).attr("height", h + 1);
+  points = x.ticks(100).map(function(d) {
+    return {
+      x: d,
+      y: normalZ(d, mean, standard_deviation) * 1000
+    };
+  });
+  line = d3.svg.line().x(function(d) {
+    return x(d.x);
+  }).y(function(d) {
+    return y(d.y);
+  });
+  svg.append('svg:path').attr('class', 'distribution').attr('d', line(points));
   nesting_operator = d3.nest().key(property);
   block_width = x(1) - x(0);
   block_height = y(0) - y(1);

@@ -1,3 +1,7 @@
+normalZ = (x,mean,standard_deviation) ->
+  a = x - mean;
+  Math.exp(-(a * a) / (2 * standard_deviation * standard_deviation)) / (Math.sqrt(2 * Math.PI) * standard_deviation); 
+
 # Drawing function
 histogram = (tag,title,mean,standard_deviation,property) ->
   w = 250
@@ -58,13 +62,18 @@ histogram = (tag,title,mean,standard_deviation,property) ->
       .attr("height", h+1);
   
   # Add a normal distribution line
-  # svg.selectAll('path.normal')
-  #     .data(x.ticks(10))
-  #   .enter().append('svg:path')
-  #     .attr('d'
-  #       d3.svg.line()
-  #         .x((d) -> console.log(d); x(d))
-  #         .y((d) -> y(normalZ(d,mean,standard_deviation))))
+  points = x.ticks(100).map( (d) ->
+    {x:d, y: normalZ(d,mean,standard_deviation)*1000 }
+    )
+    
+  line = d3.svg.line().x((d) -> x(d.x)).y((d) -> y(d.y))
+  
+  svg.append('svg:path')
+      .attr('class','distribution')
+      .attr('d',line(points))
+        # d3.svg.line()
+        #   .x((d) -> console.log(d); x(d))
+        #   .y((d) ->))
   
   nesting_operator = d3.nest().key(property)
   block_width = x(1)-x(0)
