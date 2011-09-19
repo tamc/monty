@@ -2,6 +2,48 @@ normalZ = (x,mean,standard_deviation) ->
   a = x - mean;
   Math.exp(-(a * a) / (2 * standard_deviation * standard_deviation)) / (Math.sqrt(2 * Math.PI) * standard_deviation); 
 
+# Lifted from https://github.com/jstat/jstat/blob/master/src/core.js
+erf = ( x ) ->
+	cof = [
+		-1.3026537197817094, 6.4196979235649026e-1, 1.9476473204185836e-2,
+		-9.561514786808631e-3, -9.46595344482036e-4, 3.66839497852761e-4,
+		4.2523324806907e-5, -2.0278578112534e-5, -1.624290004647e-6,
+		1.303655835580e-6, 1.5626441722e-8, -8.5238095915e-8,
+		6.529054439e-9, 5.059343495e-9, -9.91364156e-10,
+		-2.27365122e-10, 9.6467911e-11, 2.394038e-12,
+		-6.886027e-12, 8.94487e-13, 3.13092e-13,
+		-1.12708e-13, 3.81e-16, 7.106e-15,
+		-1.523e-15, -9.4e-17, 1.21e-16,
+		-2.8e-17
+		]		
+	j = cof.length - 1
+	isneg = false
+	d = 0
+	dd = 0
+
+	if x < 0
+		x = -x
+		isneg = true
+
+	t = 2 / ( 2 + x )
+	ty = 4 * t - 2
+	while j > 0
+		tmp = d
+		d = ty * d - dd + cof[j]
+		dd = tmp
+		j--
+	res = t * Math.exp( -x*x + 0.5 * ( cof[0] + ty * d ) - dd )
+	if isneg
+	  return res - 1
+	else
+	  return 1 - res
+
+cumulativeNormal = (x,mean,standard_deviation) ->
+  0.5 * (1+erf((x-mean)/(Math.sqrt(2)*standard_deviation)))
+
+probability_in_bin = (bin,mean,standard_deviation,bin_width) ->
+  cumulativeNormal(bin+(bin_width/2),mean,standard_deviation) - cumulativeNormal(bin-(bin_width/2),mean,standard_deviation)
+
 # Drawing a histogram
 histogram = (opts = {}) ->
   # Set default options
@@ -16,7 +58,7 @@ histogram = (opts = {}) ->
   x_step = (x.domain()[1] - x.domain()[0])/opts.bins
   nesting_operator = d3.nest().key((d) -> Math.round(opts.property(d) / x_step) * x_step )
   block_width = x(x_step) - x(0)
-  block_height = block_width
+  block_height = opts.height / ((opts.y_max / 100)*100)
   
   # Start the drawing by setting up the surround
   tag = d3.select(opts.tag)
@@ -70,7 +112,7 @@ histogram = (opts = {}) ->
   if opts.mean? && opts.standard_deviation?
     # Add a normal distribution line
     points = x.ticks(100).map( (d) ->
-      {x:d, y: normalZ(d,opts.mean,opts.standard_deviation)*5000 }
+      {x:d, y: probability_in_bin(d,opts.mean,opts.standard_deviation,x_step)*100 }
       )
     
     line = d3.svg.line().x((d) -> x(d.x)).y((d) -> y(d.y))
@@ -119,13 +161,13 @@ histogram = (opts = {}) ->
 
 histogram.defaults =
   tag:      "body"
-  width:    200
-  height:   200
+  width:    250
+  height:   250
   padding:  30
   x_min:    0
   x_max:    300
   y_min:    0
-  y_max:    100
+  y_max:    10
   x_ticks:  10
   y_ticks:  10
   property: (d) -> d
@@ -217,18 +259,18 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
 draw = () ->
   charts = [
     # Inputs
-    new histogram(tag:'#capital', title:"Capital cost", x_max:200, mean:100, standard_deviation:20, property: (d) -> d.technology.capital_cost)
-    # new histogram("#capital","Capital cost",100,20, (d) -> d.technology.capital_cost ),
-    # new histogram("#operating","Operating cost",100,60, (d) -> d.technology.operating_cost ),
-    # new histogram("#fuel","Fuel cost",100,60, (d) -> d.technology.fuel_cost ),
-    # new histogram("#output","Output",1,0.3, (d) -> d.technology.output ),
-    # new histogram("#hurdle","Hurdle rate",0.1,0.03, (d) -> d.investors.hurdle_rate ),
-    # new histogram("#quantity","Investors",100,30, (d) -> d.investors.quantity ),
-    # new histogram("#price","Price",200,60, (d) -> d.environment.price ),
-    # # Dependent variables
-    # new histogram("#deployment","Quantity deployed",100,60, (d) -> d.deployment ),
-    # new histogram("#energyDelivered","Energy delivered",100,60, (d) -> d.energyDelivered ),
-    # new histogram("#publicSpend","Public expenditure",100,60, (d) -> d.publicSpend ),
+    new histogram(tag: '#capital'   ,title:"Capital cost"   ,mean:100 ,standard_deviation:30  ,property: (d) -> d.technology.capital_cost),
+    new histogram(tag: "#capital"   ,title:"Capital cost"   ,mean:100 ,standard_deviation:20  ,property: (d) -> d.technology.capital_cost ),
+    new histogram(tag: "#operating" ,title:"Operating cost" ,mean:100 ,standard_deviation:60  ,property: (d) -> d.technology.operating_cost ),
+    new histogram(tag: "#fuel"      ,title:"Fuel cost"      ,mean:100 ,standard_deviation:60  ,property: (d) -> d.technology.fuel_cost ),
+    new histogram(tag: "#output"    ,title:"Output"         ,mean:1   ,standard_deviation:0.3 ,property: ((d) -> d.technology.output), x_max: 2  ),
+    new histogram(tag: "#hurdle"    ,title:"Hurdle rate"    ,mean:10 ,standard_deviation:3,property: ((d) -> d.investors.hurdle_rate * 100), x_max: 20 ),
+    new histogram(tag: "#quantity"  ,title:"Investors"      ,mean:100 ,standard_deviation:30  ,property: (d) -> d.investors.quantity ),
+    new histogram(tag: "#price"     ,title:"Price"          ,mean:200 ,standard_deviation:60  ,property: (d) -> d.environment.price ),
+    # Dependent variables
+    new histogram(tag: "#deployment"      ,title: "Quantity deployed"   ,property: (d) -> d.deployment ),
+    new histogram(tag: "#energyDelivered" ,title: "Energy delivered"    ,property: (d) -> d.energyDelivered ),
+    new histogram(tag: "#publicSpend"     ,title: "Public expenditure"  ,property: (d) -> d.publicSpend ),
     # Results
     new scatterplot('#spendEnergyDelivered',"Spend against energy delivered",0,3000,0,300,((d) -> d.publicSpend),((d) -> d.energyDelivered))
     new scatterplot('#energyPerPoundAgainstPounds',"Energy per pound of public spend against spend",0,3000,0,0.2,((d) -> d.publicSpend),((d) -> (d.energyDelivered / d.publicSpend)))

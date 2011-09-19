@@ -1,9 +1,41 @@
-var draw, histogram, normalZ, scatterplot;
+var cumulativeNormal, draw, erf, histogram, normalZ, probability_in_bin, scatterplot;
 var __hasProp = Object.prototype.hasOwnProperty;
 normalZ = function(x, mean, standard_deviation) {
   var a;
   a = x - mean;
   return Math.exp(-(a * a) / (2 * standard_deviation * standard_deviation)) / (Math.sqrt(2 * Math.PI) * standard_deviation);
+};
+erf = function(x) {
+  var cof, d, dd, isneg, j, res, t, tmp, ty;
+  cof = [-1.3026537197817094, 6.4196979235649026e-1, 1.9476473204185836e-2, -9.561514786808631e-3, -9.46595344482036e-4, 3.66839497852761e-4, 4.2523324806907e-5, -2.0278578112534e-5, -1.624290004647e-6, 1.303655835580e-6, 1.5626441722e-8, -8.5238095915e-8, 6.529054439e-9, 5.059343495e-9, -9.91364156e-10, -2.27365122e-10, 9.6467911e-11, 2.394038e-12, -6.886027e-12, 8.94487e-13, 3.13092e-13, -1.12708e-13, 3.81e-16, 7.106e-15, -1.523e-15, -9.4e-17, 1.21e-16, -2.8e-17];
+  j = cof.length - 1;
+  isneg = false;
+  d = 0;
+  dd = 0;
+  if (x < 0) {
+    x = -x;
+    isneg = true;
+  }
+  t = 2 / (2 + x);
+  ty = 4 * t - 2;
+  while (j > 0) {
+    tmp = d;
+    d = ty * d - dd + cof[j];
+    dd = tmp;
+    j--;
+  }
+  res = t * Math.exp(-x * x + 0.5 * (cof[0] + ty * d) - dd);
+  if (isneg) {
+    return res - 1;
+  } else {
+    return 1 - res;
+  }
+};
+cumulativeNormal = function(x, mean, standard_deviation) {
+  return 0.5 * (1 + erf((x - mean) / (Math.sqrt(2) * standard_deviation)));
+};
+probability_in_bin = function(bin, mean, standard_deviation, bin_width) {
+  return cumulativeNormal(bin + (bin_width / 2), mean, standard_deviation) - cumulativeNormal(bin - (bin_width / 2), mean, standard_deviation);
 };
 histogram = function(opts) {
   var block_height, block_width, iteration_to_id, key, line, nesting_operator, point_group, points, svg, tag, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
@@ -25,7 +57,7 @@ histogram = function(opts) {
     return Math.round(opts.property(d) / x_step) * x_step;
   });
   block_width = x(x_step) - x(0);
-  block_height = block_width;
+  block_height = opts.height / ((opts.y_max / 100) * 100);
   tag = d3.select(opts.tag);
   tag.append("h2").text(opts.title);
   svg = tag.append("svg:svg").attr("width", opts.width + opts.padding * 2).attr("height", opts.height + opts.padding * 2).append("svg:g").attr("transform", "translate(" + opts.padding + "," + opts.padding + ")");
@@ -42,7 +74,7 @@ histogram = function(opts) {
     points = x.ticks(100).map(function(d) {
       return {
         x: d,
-        y: normalZ(d, opts.mean, opts.standard_deviation) * 5000
+        y: probability_in_bin(d, opts.mean, opts.standard_deviation, x_step) * 100
       };
     });
     line = d3.svg.line().x(function(d) {
@@ -86,13 +118,13 @@ histogram = function(opts) {
 };
 histogram.defaults = {
   tag: "body",
-  width: 200,
-  height: 200,
+  width: 250,
+  height: 250,
   padding: 30,
   x_min: 0,
   x_max: 300,
   y_min: 0,
-  y_max: 100,
+  y_max: 10,
   x_ticks: 10,
   y_ticks: 10,
   property: function(d) {
@@ -148,11 +180,86 @@ draw = function() {
     new histogram({
       tag: '#capital',
       title: "Capital cost",
-      x_max: 200,
+      mean: 100,
+      standard_deviation: 30,
+      property: function(d) {
+        return d.technology.capital_cost;
+      }
+    }), new histogram({
+      tag: "#capital",
+      title: "Capital cost",
       mean: 100,
       standard_deviation: 20,
       property: function(d) {
         return d.technology.capital_cost;
+      }
+    }), new histogram({
+      tag: "#operating",
+      title: "Operating cost",
+      mean: 100,
+      standard_deviation: 60,
+      property: function(d) {
+        return d.technology.operating_cost;
+      }
+    }), new histogram({
+      tag: "#fuel",
+      title: "Fuel cost",
+      mean: 100,
+      standard_deviation: 60,
+      property: function(d) {
+        return d.technology.fuel_cost;
+      }
+    }), new histogram({
+      tag: "#output",
+      title: "Output",
+      mean: 1,
+      standard_deviation: 0.3,
+      property: (function(d) {
+        return d.technology.output;
+      }),
+      x_max: 2
+    }), new histogram({
+      tag: "#hurdle",
+      title: "Hurdle rate",
+      mean: 10,
+      standard_deviation: 3,
+      property: (function(d) {
+        return d.investors.hurdle_rate * 100;
+      }),
+      x_max: 20
+    }), new histogram({
+      tag: "#quantity",
+      title: "Investors",
+      mean: 100,
+      standard_deviation: 30,
+      property: function(d) {
+        return d.investors.quantity;
+      }
+    }), new histogram({
+      tag: "#price",
+      title: "Price",
+      mean: 200,
+      standard_deviation: 60,
+      property: function(d) {
+        return d.environment.price;
+      }
+    }), new histogram({
+      tag: "#deployment",
+      title: "Quantity deployed",
+      property: function(d) {
+        return d.deployment;
+      }
+    }), new histogram({
+      tag: "#energyDelivered",
+      title: "Energy delivered",
+      property: function(d) {
+        return d.energyDelivered;
+      }
+    }), new histogram({
+      tag: "#publicSpend",
+      title: "Public expenditure",
+      property: function(d) {
+        return d.publicSpend;
       }
     }), new scatterplot('#spendEnergyDelivered', "Spend against energy delivered", 0, 3000, 0, 300, (function(d) {
       return d.publicSpend;
