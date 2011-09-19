@@ -33,11 +33,16 @@ rect.old {
   fill: #ccc;
 }
 
+rect.selected {
+  fill: #FF0;
+  stroke: #FF0;
+}
+
 div.chartGroup {
   clear: both;
 }
 
-div.histogram {
+div.histogram, div.scatter {
   float: left;
 }
 

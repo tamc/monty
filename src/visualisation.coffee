@@ -4,12 +4,15 @@ normalZ = (x,mean,standard_deviation) ->
 
 # Drawing function
 histogram = (tag,title,mean,standard_deviation,property) ->
-  w = 250
-  h = 250
-  p = 20
-  x = d3.scale.linear().domain([mean - 3*standard_deviation,mean + 3*standard_deviation]).range([0, w])
-  y = d3.scale.linear().domain([0,0.2*200]).range([h, 0])
-  
+  w = 200
+  h = 200
+  p = 30
+  x = d3.scale.linear().domain([0,300]).range([0, w])
+  y = d3.scale.linear().domain([0,20]).range([h, 0])
+  x_step = (x.domain()[1] - x.domain()[0])/50
+  nesting_operator = d3.nest().key((d) -> Math.round(property(d) / x_step) * x_step )
+  block_width = x(x_step)-x(0)
+  block_height = (h/(500/20))
   tag = d3.select(tag)
   
   tag.append("h2").text(title)
@@ -54,7 +57,7 @@ histogram = (tag,title,mean,standard_deviation,property) ->
       .attr("y", y)
       .attr("dy", ".35em")
       .attr("text-anchor", "end")
-      .text(y.tickFormat(10));
+      .text( (d) -> y.tickFormat(10)(d)+"%" );
 
   # Add the black box surround
   svg.append("svg:rect")
@@ -71,13 +74,7 @@ histogram = (tag,title,mean,standard_deviation,property) ->
   svg.append('svg:path')
       .attr('class','distribution')
       .attr('d',line(points))
-        # d3.svg.line()
-        #   .x((d) -> console.log(d); x(d))
-        #   .y((d) ->))
   
-  nesting_operator = d3.nest().key(property)
-  block_width = x(1)-x(0)
-  block_height = y(0)-y(1)
   values_to_ids = (d) -> d.key
   values_to_frequencies = (d) -> d.values
   iteration_to_id = (d) -> +d.id
@@ -93,6 +90,7 @@ histogram = (tag,title,mean,standard_deviation,property) ->
       
     values.enter().append("svg:g")
       .attr("class", "value")
+      .attr("transform", (d) -> "translate(#{x(+d.key)},0)")
 
     values.exit().remove()
     
@@ -103,14 +101,19 @@ histogram = (tag,title,mean,standard_deviation,property) ->
     frequencies.classed('newblock',false)
       
     frequencies.enter().append("svg:rect")
-        .classed("block",true)
-        .classed('newblock',true)
-        .attr("x", (d,i) -> x(property(d)) )
+        .attr("class",(d) -> "block newblock block#{d.id}")
+        # .attr("x", (d,i) -> x(property(d)) )
         .attr("y", (d,i) -> y(i)-block_height )
         .attr("width",block_width)
         .attr("height",block_height)
+        .on('mouseover',(d) -> d3.selectAll(".block#{d.id}").classed('selected',true))
+        .on('mouseout', (d) -> d3.selectAll(".block#{d.id}").classed('selected',false))
     
     frequencies.exit().remove()
+  
+  @finished = ->
+     frequencies = values.selectAll("rect")
+          .classed('newblock',false)
   
   this
 
@@ -173,8 +176,8 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
       .attr("height", h+1);
   
   iteration_to_id = (d) -> d.id
-  block_width = x(1)-x(0)
-  block_height = y(0)-y(1)
+  block_width = 5
+  block_height = 5
   
   @update = (data) ->
 
@@ -184,12 +187,13 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
     frequencies.classed('newblock',false)
 
     frequencies.enter().append("svg:rect")
-        .classed("block",true)
-        .classed('newblock',true)
+        .attr("class",(d) -> "block newblock block#{d.id}")
         .attr("x", (d) -> x(x_property(d)) )
         .attr("y", (d) -> y(y_property(d))-block_height )
         .attr("width",block_width)
         .attr("height",block_height)
+        .on('mouseover',(d) -> d3.selectAll(".block#{d.id}").classed('selected',true))
+        .on('mouseout', (d) -> d3.selectAll(".block#{d.id}").classed('selected',false))
 
     frequencies.exit().remove()
 
@@ -201,17 +205,17 @@ draw = () ->
     new histogram("#capital","Capital cost",100,20, (d) -> d.technology.capital_cost ),
     new histogram("#operating","Operating cost",100,60, (d) -> d.technology.operating_cost ),
     new histogram("#fuel","Fuel cost",100,60, (d) -> d.technology.fuel_cost ),
-    new histogram("#output","Output",100,60, (d) -> d.technology.output ),
+    new histogram("#output","Output",1,0.3, (d) -> d.technology.output ),
     new histogram("#hurdle","Hurdle rate",0.1,0.03, (d) -> d.investors.hurdle_rate ),
-    new histogram("#quantity","Investors",100,60, (d) -> d.investors.quantity ),
-    new histogram("#price","Price",100,60, (d) -> d.environment.price ),
+    new histogram("#quantity","Investors",100,30, (d) -> d.investors.quantity ),
+    new histogram("#price","Price",200,60, (d) -> d.environment.price ),
     # Dependent variables
     new histogram("#deployment","Quantity deployed",100,60, (d) -> d.deployment ),
     new histogram("#energyDelivered","Energy delivered",100,60, (d) -> d.energyDelivered ),
     new histogram("#publicSpend","Public expenditure",100,60, (d) -> d.publicSpend ),
     # Results
     new scatterplot('#spendEnergyDelivered',"Spend against energy delivered",0,3000,0,300,((d) -> d.publicSpend),((d) -> d.energyDelivered))
-    new scatterplot('#energyPerPoundAgainstPounds',"Energy per pound of public spend against spend",0,3000,0,10,((d) -> d.publicSpend),((d) -> (d.energyDelivered / d.publicSpend)))
+    new scatterplot('#energyPerPoundAgainstPounds',"Energy per pound of public spend against spend",0,3000,0,0.2,((d) -> d.publicSpend),((d) -> (d.energyDelivered / d.publicSpend)))
   ]
 
   iterations = []

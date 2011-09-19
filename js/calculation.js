@@ -1,21 +1,27 @@
 var environment, investors, iteration, randomNormalValue, randomValue, technology;
 randomNormalValue = function() {
-  return (Math.random() * 2 - 1) + (Math.random() * 2 - 1) + (Math.random() * 2 - 1);
-};
-randomValue = function(mean, standard_deviation, precision) {
-  if (precision == null) {
-    precision = 1;
+  var r, s, x1, x2, y1, y2;
+  while (r >= 1.0 || r === void 0) {
+    x1 = 2.0 * Math.random() - 1.0;
+    x2 = 2.0 * Math.random() - 1.0;
+    r = x1 * x1 + x2 * x2;
   }
-  return Math.round(((randomNormalValue() * standard_deviation) + mean) / precision) * precision;
+  s = Math.sqrt((-2.0 * Math.log(r)) / r);
+  y1 = x1 * s;
+  y2 = x2 * s;
+  return y1;
+};
+randomValue = function(mean, standard_deviation) {
+  return (randomNormalValue() * standard_deviation) + mean;
 };
 technology = function() {
   this.capital_cost = randomValue(100, 20);
   this.operating_cost = randomValue(100, 60);
   this.fuel_cost = randomValue(100, 60);
-  return this.output = randomValue(1, 0.3, 0.1);
+  return this.output = randomValue(1, 0.3);
 };
 investors = function() {
-  this.hurdle_rate = randomValue(0.1, 0.03, 0.01);
+  this.hurdle_rate = randomValue(0.1, 0.03);
   this.loan_period = 10;
   return this.quantity = randomValue(100, 30);
 };
