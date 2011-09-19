@@ -20,11 +20,11 @@ rect {
 
 rect.block {
   fill: #aaa;
-  stroke: #aaa;
+  stroke: #999;
   shape-rendering: crispEdges;
 }
 
-rect.newblock {
+rect.selected {
   stroke: #333;
   fill: #FF0;
 }
@@ -33,9 +33,10 @@ rect.old {
   fill: #ccc;
 }
 
-rect.selected {
-  fill: #FF0;
-  stroke: #FF0;
+path.distribution {
+  fill: null;
+  stroke: #f00;
+  shape-rendering: crispEdges;
 }
 
 div.chartGroup {

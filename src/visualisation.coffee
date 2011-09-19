@@ -2,29 +2,35 @@ normalZ = (x,mean,standard_deviation) ->
   a = x - mean;
   Math.exp(-(a * a) / (2 * standard_deviation * standard_deviation)) / (Math.sqrt(2 * Math.PI) * standard_deviation); 
 
-# Drawing function
-histogram = (tag,title,mean,standard_deviation,property) ->
-  w = 200
-  h = 200
-  p = 30
-  x = d3.scale.linear().domain([0,300]).range([0, w])
-  y = d3.scale.linear().domain([0,20]).range([h, 0])
-  x_step = (x.domain()[1] - x.domain()[0])/50
-  nesting_operator = d3.nest().key((d) -> Math.round(property(d) / x_step) * x_step )
-  block_width = x(x_step)-x(0)
-  block_height = (h/(500/20))
-  tag = d3.select(tag)
+# Drawing a histogram
+histogram = (opts = {}) ->
+  # Set default options
+  for own key, value of histogram.defaults
+    opts[key] = value unless opts[key]?
   
-  tag.append("h2").text(title)
+  # Set up scales
+  x = d3.scale.linear().domain([opts.x_min,opts.x_max]).range([0, opts.width])
+  y = d3.scale.linear().domain([opts.y_min,opts.y_max]).range([opts.height, 0])
   
+  # Set up bucket size and corresponding block dimenions
+  x_step = (x.domain()[1] - x.domain()[0])/opts.bins
+  nesting_operator = d3.nest().key((d) -> Math.round(opts.property(d) / x_step) * x_step )
+  block_width = x(x_step) - x(0)
+  block_height = block_width
+  
+  # Start the drawing by setting up the surround
+  tag = d3.select(opts.tag)
+  tag.append("h2").text(opts.title)
+  
+  # Add a transformation box so we leave space around the edges for axis
   svg = tag.append("svg:svg")
-      .attr("width", w + p * 2)
-      .attr("height", h + p * 2)
+      .attr("width", opts.width + opts.padding * 2)
+      .attr("height", opts.height + opts.padding * 2)
     .append("svg:g")
-      .attr("transform", "translate(" + p + "," + p + ")")
+      .attr("transform", "translate(" + opts.padding + "," + opts.padding + ")")
   
   xrule = svg.selectAll("g.x")
-      .data(x.ticks(10))
+      .data(x.ticks(opts.x_ticks))
     .enter().append("svg:g")
       .attr("class", "x");
 
@@ -32,23 +38,23 @@ histogram = (tag,title,mean,standard_deviation,property) ->
       .attr("x1", x)
       .attr("x2", x)
       .attr("y1", 0)
-      .attr("y2", h);
+      .attr("y2", opts.height);
 
   xrule.append("svg:text")
       .attr("x", x)
-      .attr("y", h + 3)
+      .attr("y", opts.height + 3)
       .attr("dy", ".71em")
       .attr("text-anchor", "middle")
-      .text(x.tickFormat(10));
+      .text(x.tickFormat(opts.x_ticks));
   
   yrule = svg.selectAll("g.y")
-      .data(y.ticks(10))
+      .data(y.ticks(opts.y_ticks))
     .enter().append("svg:g")
       .attr("class", "y");
 
   yrule.append("svg:line")
       .attr("x1", 0)
-      .attr("x2", w)
+      .attr("x2", opts.width)
       .attr("y1", y)
       .attr("y2", y);
 
@@ -57,23 +63,21 @@ histogram = (tag,title,mean,standard_deviation,property) ->
       .attr("y", y)
       .attr("dy", ".35em")
       .attr("text-anchor", "end")
-      .text( (d) -> y.tickFormat(10)(d)+"%" );
-
-  # Add the black box surround
-  svg.append("svg:rect")
-      .attr("width", w)
-      .attr("height", h+1);
+      .text( (d) -> y.tickFormat(opts.x_ticks)(d)+"%" );
   
-  # Add a normal distribution line
-  points = x.ticks(100).map( (d) ->
-    {x:d, y: normalZ(d,mean,standard_deviation)*1000 }
-    )
+  point_group = svg.append("svg:g")
+  
+  if opts.mean? && opts.standard_deviation?
+    # Add a normal distribution line
+    points = x.ticks(100).map( (d) ->
+      {x:d, y: normalZ(d,opts.mean,opts.standard_deviation)*5000 }
+      )
     
-  line = d3.svg.line().x((d) -> x(d.x)).y((d) -> y(d.y))
+    line = d3.svg.line().x((d) -> x(d.x)).y((d) -> y(d.y))
   
-  svg.append('svg:path')
-      .attr('class','distribution')
-      .attr('d',line(points))
+    svg.append('svg:path')
+        .attr('class','distribution')
+        .attr('d',line(points))
   
   values_to_ids = (d) -> d.key
   values_to_frequencies = (d) -> d.values
@@ -85,12 +89,12 @@ histogram = (tag,title,mean,standard_deviation,property) ->
     buckets = nesting_operator.entries(data)
     
     # Add a group for each bucket
-    values = svg.selectAll("g.value")
+    values = point_group.selectAll("g.value")
       .data(buckets,values_to_ids)
       
     values.enter().append("svg:g")
       .attr("class", "value")
-      .attr("transform", (d) -> "translate(#{x(+d.key)},0)")
+      .attr("transform", (d) -> "translate(#{x(+d.key-(x_step/2))},0)")
 
     values.exit().remove()
     
@@ -98,12 +102,12 @@ histogram = (tag,title,mean,standard_deviation,property) ->
     frequencies = values.selectAll("rect")
         .data(values_to_frequencies,iteration_to_id)       
     
-    frequencies.classed('newblock',false)
+    frequencies.classed('selected',false)
       
     frequencies.enter().append("svg:rect")
-        .attr("class",(d) -> "block newblock block#{d.id}")
+        .attr("class",(d) -> "block selected block#{d.id}")
         # .attr("x", (d,i) -> x(property(d)) )
-        .attr("y", (d,i) -> y(i)-block_height )
+        .attr("y", (d,i) -> opts.height - ((i+1)*block_height) )
         .attr("width",block_width)
         .attr("height",block_height)
         .on('mouseover',(d) -> d3.selectAll(".block#{d.id}").classed('selected',true))
@@ -111,11 +115,22 @@ histogram = (tag,title,mean,standard_deviation,property) ->
     
     frequencies.exit().remove()
   
-  @finished = ->
-     frequencies = values.selectAll("rect")
-          .classed('newblock',false)
-  
   this
+
+histogram.defaults =
+  tag:      "body"
+  width:    200
+  height:   200
+  padding:  30
+  x_min:    0
+  x_max:    300
+  y_min:    0
+  y_max:    100
+  x_ticks:  10
+  y_ticks:  10
+  property: (d) -> d
+  bins:     50
+  title:    "Histogram"
 
 scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
   w = 250
@@ -202,17 +217,18 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
 draw = () ->
   charts = [
     # Inputs
-    new histogram("#capital","Capital cost",100,20, (d) -> d.technology.capital_cost ),
-    new histogram("#operating","Operating cost",100,60, (d) -> d.technology.operating_cost ),
-    new histogram("#fuel","Fuel cost",100,60, (d) -> d.technology.fuel_cost ),
-    new histogram("#output","Output",1,0.3, (d) -> d.technology.output ),
-    new histogram("#hurdle","Hurdle rate",0.1,0.03, (d) -> d.investors.hurdle_rate ),
-    new histogram("#quantity","Investors",100,30, (d) -> d.investors.quantity ),
-    new histogram("#price","Price",200,60, (d) -> d.environment.price ),
-    # Dependent variables
-    new histogram("#deployment","Quantity deployed",100,60, (d) -> d.deployment ),
-    new histogram("#energyDelivered","Energy delivered",100,60, (d) -> d.energyDelivered ),
-    new histogram("#publicSpend","Public expenditure",100,60, (d) -> d.publicSpend ),
+    new histogram(tag:'#capital', title:"Capital cost", x_max:200, mean:100, standard_deviation:20, property: (d) -> d.technology.capital_cost)
+    # new histogram("#capital","Capital cost",100,20, (d) -> d.technology.capital_cost ),
+    # new histogram("#operating","Operating cost",100,60, (d) -> d.technology.operating_cost ),
+    # new histogram("#fuel","Fuel cost",100,60, (d) -> d.technology.fuel_cost ),
+    # new histogram("#output","Output",1,0.3, (d) -> d.technology.output ),
+    # new histogram("#hurdle","Hurdle rate",0.1,0.03, (d) -> d.investors.hurdle_rate ),
+    # new histogram("#quantity","Investors",100,30, (d) -> d.investors.quantity ),
+    # new histogram("#price","Price",200,60, (d) -> d.environment.price ),
+    # # Dependent variables
+    # new histogram("#deployment","Quantity deployed",100,60, (d) -> d.deployment ),
+    # new histogram("#energyDelivered","Energy delivered",100,60, (d) -> d.energyDelivered ),
+    # new histogram("#publicSpend","Public expenditure",100,60, (d) -> d.publicSpend ),
     # Results
     new scatterplot('#spendEnergyDelivered',"Spend against energy delivered",0,3000,0,300,((d) -> d.publicSpend),((d) -> d.energyDelivered))
     new scatterplot('#energyPerPoundAgainstPounds',"Energy per pound of public spend against spend",0,3000,0,0.2,((d) -> d.publicSpend),((d) -> (d.energyDelivered / d.publicSpend)))
