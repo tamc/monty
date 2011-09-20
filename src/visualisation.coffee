@@ -58,7 +58,7 @@ histogram = (opts = {}) ->
   x_step = (x.domain()[1] - x.domain()[0])/opts.bins
   nesting_operator = d3.nest().key((d) -> Math.round(opts.property(d) / x_step) * x_step )
   block_width = x(x_step) - x(0)
-  block_height = opts.height / ((opts.y_max / 100)*100)
+  block_height = opts.height / ((opts.y_max / 100)*500)
   
   # Start the drawing by setting up the surround
   tag = d3.select(opts.tag)
@@ -261,8 +261,8 @@ draw = () ->
     # Inputs
     new histogram(tag: '#capital'   ,title:"Capital cost"   ,mean:100 ,standard_deviation:30  ,property: (d) -> d.technology.capital_cost),
     new histogram(tag: "#capital"   ,title:"Capital cost"   ,mean:100 ,standard_deviation:20  ,property: (d) -> d.technology.capital_cost ),
-    new histogram(tag: "#operating" ,title:"Operating cost" ,mean:100 ,standard_deviation:60  ,property: (d) -> d.technology.operating_cost ),
-    new histogram(tag: "#fuel"      ,title:"Fuel cost"      ,mean:100 ,standard_deviation:60  ,property: (d) -> d.technology.fuel_cost ),
+    new histogram(tag: "#operating" ,title:"Operating cost" ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.operating_cost ),
+    new histogram(tag: "#fuel"      ,title:"Fuel cost"      ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.fuel_cost ),
     new histogram(tag: "#output"    ,title:"Output"         ,mean:1   ,standard_deviation:0.3 ,property: ((d) -> d.technology.output), x_max: 2  ),
     new histogram(tag: "#hurdle"    ,title:"Hurdle rate"    ,mean:10 ,standard_deviation:3,property: ((d) -> d.investors.hurdle_rate * 100), x_max: 20 ),
     new histogram(tag: "#quantity"  ,title:"Investors"      ,mean:100 ,standard_deviation:30  ,property: (d) -> d.investors.quantity ),
@@ -270,10 +270,10 @@ draw = () ->
     # Dependent variables
     new histogram(tag: "#deployment"      ,title: "Quantity deployed"   ,property: (d) -> d.deployment ),
     new histogram(tag: "#energyDelivered" ,title: "Energy delivered"    ,property: (d) -> d.energyDelivered ),
-    new histogram(tag: "#publicSpend"     ,title: "Public expenditure"  ,property: (d) -> d.publicSpend ),
+    new histogram(tag: "#publicSpend"     ,title: "Public expenditure"  , x_max: 2000, property: (d) -> d.publicSpend ),
     # Results
-    new scatterplot('#spendEnergyDelivered',"Spend against energy delivered",0,3000,0,300,((d) -> d.publicSpend),((d) -> d.energyDelivered))
-    new scatterplot('#energyPerPoundAgainstPounds',"Energy per pound of public spend against spend",0,3000,0,0.2,((d) -> d.publicSpend),((d) -> (d.energyDelivered / d.publicSpend)))
+    new scatterplot('#spendEnergyDelivered',"Spend against energy delivered",0,2000,0,300,((d) -> d.publicSpend),((d) -> d.energyDelivered))
+    new scatterplot('#energyPerPoundAgainstPounds',"Energy per pound of public spend against spend",0,2000,0,0.2,((d) -> d.publicSpend),((d) -> (d.energyDelivered / d.publicSpend)))
   ]
 
   iterations = []

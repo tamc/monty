@@ -19,8 +19,8 @@ randomValue = (mean,standard_deviation) ->
 # The variables
 technology = () ->
   @capital_cost   = randomValue(100,30)
-  @operating_cost = randomValue(100,60)
-  @fuel_cost      = randomValue(100,60)
+  @operating_cost = randomValue(100,50)
+  @fuel_cost      = randomValue(100,50)
   @output         = randomValue(1,0.3)
 
 investors = () ->
@@ -54,7 +54,7 @@ iteration = (@id,@technology,@investors,@environment) ->
   return this
 
 @onmessage = (data) ->
-  for i in [1..100]
+  for i in [1..500]
     @postMessage(new iteration(i,new technology, new investors, new environment))
     false
   @close

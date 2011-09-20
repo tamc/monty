@@ -57,7 +57,7 @@ histogram = function(opts) {
     return Math.round(opts.property(d) / x_step) * x_step;
   });
   block_width = x(x_step) - x(0);
-  block_height = opts.height / ((opts.y_max / 100) * 100);
+  block_height = opts.height / ((opts.y_max / 100) * 500);
   tag = d3.select(opts.tag);
   tag.append("h2").text(opts.title);
   svg = tag.append("svg:svg").attr("width", opts.width + opts.padding * 2).attr("height", opts.height + opts.padding * 2).append("svg:g").attr("transform", "translate(" + opts.padding + "," + opts.padding + ")");
@@ -197,7 +197,7 @@ draw = function() {
       tag: "#operating",
       title: "Operating cost",
       mean: 100,
-      standard_deviation: 60,
+      standard_deviation: 50,
       property: function(d) {
         return d.technology.operating_cost;
       }
@@ -205,7 +205,7 @@ draw = function() {
       tag: "#fuel",
       title: "Fuel cost",
       mean: 100,
-      standard_deviation: 60,
+      standard_deviation: 50,
       property: function(d) {
         return d.technology.fuel_cost;
       }
@@ -258,14 +258,15 @@ draw = function() {
     }), new histogram({
       tag: "#publicSpend",
       title: "Public expenditure",
+      x_max: 2000,
       property: function(d) {
         return d.publicSpend;
       }
-    }), new scatterplot('#spendEnergyDelivered', "Spend against energy delivered", 0, 3000, 0, 300, (function(d) {
+    }), new scatterplot('#spendEnergyDelivered', "Spend against energy delivered", 0, 2000, 0, 300, (function(d) {
       return d.publicSpend;
     }), (function(d) {
       return d.energyDelivered;
-    })), new scatterplot('#energyPerPoundAgainstPounds', "Energy per pound of public spend against spend", 0, 3000, 0, 0.2, (function(d) {
+    })), new scatterplot('#energyPerPoundAgainstPounds', "Energy per pound of public spend against spend", 0, 2000, 0, 0.2, (function(d) {
       return d.publicSpend;
     }), (function(d) {
       return d.energyDelivered / d.publicSpend;

@@ -16,8 +16,8 @@ randomValue = function(mean, standard_deviation) {
 };
 technology = function() {
   this.capital_cost = randomValue(100, 30);
-  this.operating_cost = randomValue(100, 60);
-  this.fuel_cost = randomValue(100, 60);
+  this.operating_cost = randomValue(100, 50);
+  this.fuel_cost = randomValue(100, 50);
   return this.output = randomValue(1, 0.3);
 };
 investors = function() {
@@ -53,7 +53,7 @@ iteration = function(id, technology, investors, environment) {
 };
 this.onmessage = function(data) {
   var i;
-  for (i = 1; i <= 100; i++) {
+  for (i = 1; i <= 500; i++) {
     this.postMessage(new iteration(i, new technology, new investors, new environment));
     false;
   }
