@@ -53,8 +53,9 @@ iteration = (@id,@technology,@investors,@environment) ->
     
   return this
 
-@onmessage = (data) ->
-  for i in [1..500]
-    @postMessage(new iteration(i,new technology, new investors, new environment))
+@onmessage = (event) ->
+  starting_id = event.data.starting_id
+  for i in [1..event.data.number_of_iterations]
+    @postMessage(new iteration(i+starting_id,new technology, new investors, new environment))
     false
   @close

@@ -1,4 +1,4 @@
-var charts, clear, cumulativeNormal, erf, histogram, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
+var charts, clear, cumulativeNormal, erf, histogram, iterations, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 normalZ = function(x, mean, standard_deviation) {
   var a;
@@ -105,12 +105,12 @@ histogram = function(opts) {
     });
     values.exit().remove();
     frequencies = values.selectAll("rect").data(values_to_frequencies, iteration_to_id);
-    frequencies.classed('selected', false);
     frequencies.enter().append("svg:rect").attr("class", function(d) {
       return "block selected block" + d.id;
     }).attr("y", function(d, i) {
       return opts.height - ((i + 1) * block_height);
     }).attr("width", block_width).attr("height", block_height).on('mouseover', function(d) {
+      d3.selectAll("rect.selected").classed('selected', false);
       return d3.selectAll(".block" + d.id).classed('selected', true);
     }).on('mouseout', function(d) {
       return d3.selectAll(".block" + d.id).classed('selected', false);
@@ -152,7 +152,6 @@ scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_p
   yrule = svg.selectAll("g.y").data(y.ticks(10)).enter().append("svg:g").attr("class", "y");
   yrule.append("svg:line").attr("x1", 0).attr("x2", w).attr("y1", y).attr("y2", y);
   yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(y.tickFormat(10));
-  svg.append("svg:rect").attr("width", w).attr("height", h + 1);
   point_group = svg.append("svg:g");
   iteration_to_id = function(d) {
     return d.id;
@@ -167,12 +166,13 @@ scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_p
     frequencies = point_group.selectAll("rect.block").data(data, iteration_to_id);
     frequencies.classed('newblock', false);
     frequencies.enter().append("svg:rect").attr("class", function(d) {
-      return "block newblock block" + d.id;
+      return "block selected block" + d.id;
     }).attr("x", function(d) {
       return x(x_property(d));
     }).attr("y", function(d) {
       return y(y_property(d)) - block_height;
     }).attr("width", block_width).attr("height", block_height).on('mouseover', function(d) {
+      d3.selectAll("rect.selected").classed('selected', false);
       return d3.selectAll(".block" + d.id).classed('selected', true);
     }).on('mouseout', function(d) {
       return d3.selectAll(".block" + d.id).classed('selected', false);
@@ -182,6 +182,7 @@ scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_p
   return this;
 };
 charts = [];
+iterations = [];
 running = false;
 worker = null;
 setup = function() {
@@ -291,8 +292,20 @@ setup = function() {
   }), (function(d) {
     return d.energyDelivered / d.publicSpend;
   })));
-  d3.select("#startButton").on('click', function() {
-    start();
+  d3.select("#oneRun").on('click', function() {
+    start(1);
+    return false;
+  });
+  d3.select("#tenRuns").on('click', function() {
+    start(10);
+    return false;
+  });
+  d3.select("#hundredRuns").on('click', function() {
+    start(100);
+    return false;
+  });
+  d3.select("#fiveHundredRuns").on('click', function() {
+    start(500);
     return false;
   });
   d3.select("#stopButton").on('click', function() {
@@ -311,9 +324,11 @@ stop = function() {
   running = false;
   return worker.terminate();
 };
-start = function() {
-  var iterations;
-  iterations = [];
+start = function(number_of_iterations) {
+  if (number_of_iterations == null) {
+    number_of_iterations = 500;
+  }
+  d3.selectAll("rect.selected").classed('selected', false);
   worker = new Worker('../js/calculation.js');
   running = true;
   worker.onmessage = function(event) {
@@ -330,11 +345,15 @@ start = function() {
     console.log("Calculation error: " + error.message + "\n");
     throw error;
   };
-  return worker.postMessage();
+  return worker.postMessage({
+    starting_id: iterations.length,
+    number_of_iterations: number_of_iterations
+  });
 };
 clear = function() {
   var chart, _i, _len, _results;
   stop();
+  iterations = [];
   _results = [];
   for (_i = 0, _len = charts.length; _i < _len; _i++) {
     chart = charts[_i];

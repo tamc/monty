@@ -146,8 +146,7 @@ histogram = (opts = {}) ->
     # Add a rectangle for each element in each bucket
     frequencies = values.selectAll("rect")
         .data(values_to_frequencies,iteration_to_id)       
-    
-    frequencies.classed('selected',false)
+
       
     frequencies.enter().append("svg:rect")
         .attr("class",(d) -> "block selected block#{d.id}")
@@ -155,7 +154,7 @@ histogram = (opts = {}) ->
         .attr("y", (d,i) -> opts.height - ((i+1)*block_height) )
         .attr("width",block_width)
         .attr("height",block_height)
-        .on('mouseover',(d) -> d3.selectAll(".block#{d.id}").classed('selected',true))
+        .on('mouseover',(d) -> d3.selectAll("rect.selected").classed('selected',false); ; d3.selectAll(".block#{d.id}").classed('selected',true))
         .on('mouseout', (d) -> d3.selectAll(".block#{d.id}").classed('selected',false))
     
     frequencies.exit().remove()
@@ -229,11 +228,6 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
       .attr("dy", ".35em")
       .attr("text-anchor", "end")
       .text(y.tickFormat(10));
-
-  # Add the black box surround
-  svg.append("svg:rect")
-      .attr("width", w)
-      .attr("height", h+1);
   
   point_group = svg.append("svg:g")
   
@@ -252,12 +246,12 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
     frequencies.classed('newblock',false)
 
     frequencies.enter().append("svg:rect")
-        .attr("class",(d) -> "block newblock block#{d.id}")
+        .attr("class",(d) -> "block selected block#{d.id}")
         .attr("x", (d) -> x(x_property(d)) )
         .attr("y", (d) -> y(y_property(d))-block_height )
         .attr("width",block_width)
         .attr("height",block_height)
-        .on('mouseover',(d) -> d3.selectAll(".block#{d.id}").classed('selected',true))
+        .on('mouseover',(d) -> d3.selectAll("rect.selected").classed('selected',false); d3.selectAll(".block#{d.id}").classed('selected',true))
         .on('mouseout', (d) -> d3.selectAll(".block#{d.id}").classed('selected',false))
 
     frequencies.exit().remove()
@@ -265,6 +259,7 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
   this
 
 charts = []
+iterations = []
 running = false
 worker = null
 
@@ -286,7 +281,10 @@ setup = () ->
     charts.push(new scatterplot('#spendEnergyDelivered',"Spend against energy delivered",0,2000,0,300,((d) -> d.publicSpend),((d) -> d.energyDelivered)))
     charts.push(new scatterplot('#energyPerPoundAgainstPounds',"Energy per pound of public spend against spend",0,2000,0,0.2,((d) -> d.publicSpend),((d) -> (d.energyDelivered / d.publicSpend))))
     
-    d3.select("#startButton").on('click',() -> start(); return false)
+    d3.select("#oneRun").on('click',() -> start(1); return false)
+    d3.select("#tenRuns").on('click',() -> start(10); return false)
+    d3.select("#hundredRuns").on('click',() -> start(100); return false)
+    d3.select("#fiveHundredRuns").on('click',() -> start(500); return false)
     d3.select("#stopButton").on('click',() -> stop(); return false)
     d3.select("#clearButton").on('click',() -> clear(); return false)
 
@@ -295,8 +293,8 @@ stop = () ->
   running = false
   worker.terminate()
 
-start = () ->
-  iterations = []
+start = (number_of_iterations = 500) ->  
+  d3.selectAll("rect.selected").classed('selected',false)
   worker = new Worker('../js/calculation.js')
   running = true
   worker.onmessage = (event) ->
@@ -305,8 +303,9 @@ start = () ->
   worker.onerror = (error) ->  
     console.log("Calculation error: " + error.message + "\n")
     throw error
-  worker.postMessage();
+  worker.postMessage(starting_id: iterations.length, number_of_iterations: number_of_iterations);
 
 clear = () ->
   stop()
+  iterations = []
   chart.clear() for chart in charts

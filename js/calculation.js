@@ -51,10 +51,11 @@ iteration = function(id, technology, investors, environment) {
   this.publicSpend = this.deployment * this.environment.subsidy;
   return this;
 };
-this.onmessage = function(data) {
-  var i;
-  for (i = 1; i <= 500; i++) {
-    this.postMessage(new iteration(i, new technology, new investors, new environment));
+this.onmessage = function(event) {
+  var i, starting_id, _ref;
+  starting_id = event.data.starting_id;
+  for (i = 1, _ref = event.data.number_of_iterations; 1 <= _ref ? i <= _ref : i >= _ref; 1 <= _ref ? i++ : i--) {
+    this.postMessage(new iteration(i + starting_id, new technology, new investors, new environment));
     false;
   }
   return this.close;
