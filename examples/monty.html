@@ -6,7 +6,10 @@
      <script src="../js/visualisation.js" type="text/javascript"></script>
      <link href="monty.css" media="screen" rel="stylesheet" type="text/css"></link>
   </header>
-  <body id="monty" onload="draw()">
+  <body id="monty" onload="setup()">
+    <a id='startButton' href='#'>Start</a>
+    <a id='stopButton' href='#'>Stop</a>    
+    <a id='clearButton' href='#'>Clear</a>
     <div id='unknowns' class='chartGroup'>
       <div id='capital' class='histogram'></div>
       <div id='operating' class='histogram'></div>

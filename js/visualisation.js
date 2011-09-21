@@ -1,4 +1,4 @@
-var cumulativeNormal, draw, erf, histogram, normalZ, probability_in_bin, scatterplot;
+var charts, clear, cumulativeNormal, erf, histogram, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 normalZ = function(x, mean, standard_deviation) {
   var a;
@@ -93,6 +93,9 @@ histogram = function(opts) {
   iteration_to_id = function(d) {
     return +d.id;
   };
+  this.clear = function() {
+    return point_group.selectAll("g.value").remove();
+  };
   this.update = function(data) {
     var buckets, frequencies, values;
     buckets = nesting_operator.entries(data);
@@ -134,7 +137,7 @@ histogram.defaults = {
   title: "Histogram"
 };
 scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_property) {
-  var block_height, block_width, h, iteration_to_id, p, svg, w, x, xrule, y, yrule;
+  var block_height, block_width, h, iteration_to_id, p, point_group, svg, w, x, xrule, y, yrule;
   w = 250;
   h = 250;
   p = 20;
@@ -150,14 +153,18 @@ scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_p
   yrule.append("svg:line").attr("x1", 0).attr("x2", w).attr("y1", y).attr("y2", y);
   yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(y.tickFormat(10));
   svg.append("svg:rect").attr("width", w).attr("height", h + 1);
+  point_group = svg.append("svg:g");
   iteration_to_id = function(d) {
     return d.id;
   };
   block_width = 5;
   block_height = 5;
+  this.clear = function() {
+    return point_group.selectAll("rect.block").remove();
+  };
   this.update = function(data) {
     var frequencies;
-    frequencies = svg.selectAll("rect.block").data(data, iteration_to_id);
+    frequencies = point_group.selectAll("rect.block").data(data, iteration_to_id);
     frequencies.classed('newblock', false);
     frequencies.enter().append("svg:rect").attr("class", function(d) {
       return "block newblock block" + d.id;
@@ -174,106 +181,141 @@ scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_p
   };
   return this;
 };
-draw = function() {
-  var charts, iterations, worker;
-  charts = [
-    new histogram({
-      tag: '#capital',
-      title: "Capital cost",
-      mean: 100,
-      standard_deviation: 30,
-      property: function(d) {
-        return d.technology.capital_cost;
-      }
-    }), new histogram({
-      tag: "#capital",
-      title: "Capital cost",
-      mean: 100,
-      standard_deviation: 20,
-      property: function(d) {
-        return d.technology.capital_cost;
-      }
-    }), new histogram({
-      tag: "#operating",
-      title: "Operating cost",
-      mean: 100,
-      standard_deviation: 50,
-      property: function(d) {
-        return d.technology.operating_cost;
-      }
-    }), new histogram({
-      tag: "#fuel",
-      title: "Fuel cost",
-      mean: 100,
-      standard_deviation: 50,
-      property: function(d) {
-        return d.technology.fuel_cost;
-      }
-    }), new histogram({
-      tag: "#output",
-      title: "Output",
-      mean: 1,
-      standard_deviation: 0.3,
-      property: (function(d) {
-        return d.technology.output;
-      }),
-      x_max: 2
-    }), new histogram({
-      tag: "#hurdle",
-      title: "Hurdle rate",
-      mean: 10,
-      standard_deviation: 3,
-      property: (function(d) {
-        return d.investors.hurdle_rate * 100;
-      }),
-      x_max: 20
-    }), new histogram({
-      tag: "#quantity",
-      title: "Investors",
-      mean: 100,
-      standard_deviation: 30,
-      property: function(d) {
-        return d.investors.quantity;
-      }
-    }), new histogram({
-      tag: "#price",
-      title: "Price",
-      mean: 200,
-      standard_deviation: 60,
-      property: function(d) {
-        return d.environment.price;
-      }
-    }), new histogram({
-      tag: "#deployment",
-      title: "Quantity deployed",
-      property: function(d) {
-        return d.deployment;
-      }
-    }), new histogram({
-      tag: "#energyDelivered",
-      title: "Energy delivered",
-      property: function(d) {
-        return d.energyDelivered;
-      }
-    }), new histogram({
-      tag: "#publicSpend",
-      title: "Public expenditure",
-      x_max: 2000,
-      property: function(d) {
-        return d.publicSpend;
-      }
-    }), new scatterplot('#spendEnergyDelivered', "Spend against energy delivered", 0, 2000, 0, 300, (function(d) {
-      return d.publicSpend;
-    }), (function(d) {
+charts = [];
+running = false;
+worker = null;
+setup = function() {
+  charts.push(new histogram({
+    tag: '#capital',
+    title: "Capital cost",
+    mean: 100,
+    standard_deviation: 30,
+    property: function(d) {
+      return d.technology.capital_cost;
+    }
+  }));
+  charts.push(new histogram({
+    tag: "#capital",
+    title: "Capital cost",
+    mean: 100,
+    standard_deviation: 20,
+    property: function(d) {
+      return d.technology.capital_cost;
+    }
+  }));
+  charts.push(new histogram({
+    tag: "#operating",
+    title: "Operating cost",
+    mean: 100,
+    standard_deviation: 50,
+    property: function(d) {
+      return d.technology.operating_cost;
+    }
+  }));
+  charts.push(new histogram({
+    tag: "#fuel",
+    title: "Fuel cost",
+    mean: 100,
+    standard_deviation: 50,
+    property: function(d) {
+      return d.technology.fuel_cost;
+    }
+  }));
+  charts.push(new histogram({
+    tag: "#output",
+    title: "Output",
+    mean: 1,
+    standard_deviation: 0.3,
+    property: (function(d) {
+      return d.technology.output;
+    }),
+    x_max: 2
+  }));
+  charts.push(new histogram({
+    tag: "#hurdle",
+    title: "Hurdle rate",
+    mean: 10,
+    standard_deviation: 3,
+    property: (function(d) {
+      return d.investors.hurdle_rate * 100;
+    }),
+    x_max: 20
+  }));
+  charts.push(new histogram({
+    tag: "#quantity",
+    title: "Investors",
+    mean: 100,
+    standard_deviation: 30,
+    property: function(d) {
+      return d.investors.quantity;
+    }
+  }));
+  charts.push(new histogram({
+    tag: "#price",
+    title: "Price",
+    mean: 200,
+    standard_deviation: 60,
+    property: function(d) {
+      return d.environment.price;
+    }
+  }));
+  charts.push(new histogram({
+    tag: "#deployment",
+    title: "Quantity deployed",
+    property: function(d) {
+      return d.deployment;
+    }
+  }));
+  charts.push(new histogram({
+    tag: "#energyDelivered",
+    title: "Energy delivered",
+    property: function(d) {
       return d.energyDelivered;
-    })), new scatterplot('#energyPerPoundAgainstPounds', "Energy per pound of public spend against spend", 0, 2000, 0, 0.2, (function(d) {
+    }
+  }));
+  charts.push(new histogram({
+    tag: "#publicSpend",
+    title: "Public expenditure",
+    x_max: 2000,
+    property: function(d) {
       return d.publicSpend;
-    }), (function(d) {
-      return d.energyDelivered / d.publicSpend;
-    }))
-  ];
+    }
+  }));
+  charts.push(new scatterplot('#spendEnergyDelivered', "Spend against energy delivered", 0, 2000, 0, 300, (function(d) {
+    return d.publicSpend;
+  }), (function(d) {
+    return d.energyDelivered;
+  })));
+  charts.push(new scatterplot('#energyPerPoundAgainstPounds', "Energy per pound of public spend against spend", 0, 2000, 0, 0.2, (function(d) {
+    return d.publicSpend;
+  }), (function(d) {
+    return d.energyDelivered / d.publicSpend;
+  })));
+  d3.select("#startButton").on('click', function() {
+    start();
+    return false;
+  });
+  d3.select("#stopButton").on('click', function() {
+    stop();
+    return false;
+  });
+  return d3.select("#clearButton").on('click', function() {
+    clear();
+    return false;
+  });
+};
+stop = function() {
+  if (running !== true) {
+    return;
+  }
+  running = false;
+  return worker.terminate();
+};
+start = function() {
+  var iterations;
   iterations = [];
   worker = new Worker('../js/calculation.js');
+  running = true;
   worker.onmessage = function(event) {
     var chart, _i, _len, _results;
     iterations.push(event.data);
@@ -289,4 +331,14 @@ draw = function() {
     throw error;
   };
   return worker.postMessage();
+};
+clear = function() {
+  var chart, _i, _len, _results;
+  stop();
+  _results = [];
+  for (_i = 0, _len = charts.length; _i < _len; _i++) {
+    chart = charts[_i];
+    _results.push(chart.clear());
+  }
+  return _results;
 };

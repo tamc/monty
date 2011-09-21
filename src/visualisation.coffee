@@ -125,6 +125,9 @@ histogram = (opts = {}) ->
   values_to_frequencies = (d) -> d.values
   iteration_to_id = (d) -> +d.id
   
+  @clear = () ->
+    point_group.selectAll("g.value").remove()
+  
   @update = (data) ->
         
     # Turn the data into buckets    
@@ -232,13 +235,18 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
       .attr("width", w)
       .attr("height", h+1);
   
+  point_group = svg.append("svg:g")
+  
   iteration_to_id = (d) -> d.id
   block_width = 5
   block_height = 5
   
+  @clear = () ->
+    point_group.selectAll("rect.block").remove()
+  
   @update = (data) ->
 
-    frequencies = svg.selectAll("rect.block")
+    frequencies = point_group.selectAll("rect.block")
         .data(data,iteration_to_id)       
 
     frequencies.classed('newblock',false)
@@ -256,28 +264,41 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
 
   this
 
-draw = () ->
-  charts = [
-    # Inputs
-    new histogram(tag: '#capital'   ,title:"Capital cost"   ,mean:100 ,standard_deviation:30  ,property: (d) -> d.technology.capital_cost),
-    new histogram(tag: "#capital"   ,title:"Capital cost"   ,mean:100 ,standard_deviation:20  ,property: (d) -> d.technology.capital_cost ),
-    new histogram(tag: "#operating" ,title:"Operating cost" ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.operating_cost ),
-    new histogram(tag: "#fuel"      ,title:"Fuel cost"      ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.fuel_cost ),
-    new histogram(tag: "#output"    ,title:"Output"         ,mean:1   ,standard_deviation:0.3 ,property: ((d) -> d.technology.output), x_max: 2  ),
-    new histogram(tag: "#hurdle"    ,title:"Hurdle rate"    ,mean:10 ,standard_deviation:3,property: ((d) -> d.investors.hurdle_rate * 100), x_max: 20 ),
-    new histogram(tag: "#quantity"  ,title:"Investors"      ,mean:100 ,standard_deviation:30  ,property: (d) -> d.investors.quantity ),
-    new histogram(tag: "#price"     ,title:"Price"          ,mean:200 ,standard_deviation:60  ,property: (d) -> d.environment.price ),
-    # Dependent variables
-    new histogram(tag: "#deployment"      ,title: "Quantity deployed"   ,property: (d) -> d.deployment ),
-    new histogram(tag: "#energyDelivered" ,title: "Energy delivered"    ,property: (d) -> d.energyDelivered ),
-    new histogram(tag: "#publicSpend"     ,title: "Public expenditure"  , x_max: 2000, property: (d) -> d.publicSpend ),
-    # Results
-    new scatterplot('#spendEnergyDelivered',"Spend against energy delivered",0,2000,0,300,((d) -> d.publicSpend),((d) -> d.energyDelivered))
-    new scatterplot('#energyPerPoundAgainstPounds',"Energy per pound of public spend against spend",0,2000,0,0.2,((d) -> d.publicSpend),((d) -> (d.energyDelivered / d.publicSpend)))
-  ]
+charts = []
+running = false
+worker = null
 
+setup = () ->
+    # Inputs
+    charts.push(new histogram(tag: '#capital'   ,title:"Capital cost"   ,mean:100 ,standard_deviation:30  ,property: (d) -> d.technology.capital_cost))
+    charts.push(new histogram(tag: "#capital"   ,title:"Capital cost"   ,mean:100 ,standard_deviation:20  ,property: (d) -> d.technology.capital_cost ))
+    charts.push(new histogram(tag: "#operating" ,title:"Operating cost" ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.operating_cost ))
+    charts.push(new histogram(tag: "#fuel"      ,title:"Fuel cost"      ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.fuel_cost ))
+    charts.push(new histogram(tag: "#output"    ,title:"Output"         ,mean:1   ,standard_deviation:0.3 ,property: ((d) -> d.technology.output), x_max: 2  ))
+    charts.push(new histogram(tag: "#hurdle"    ,title:"Hurdle rate"    ,mean:10 ,standard_deviation:3,property: ((d) -> d.investors.hurdle_rate * 100), x_max: 20 ))
+    charts.push(new histogram(tag: "#quantity"  ,title:"Investors"      ,mean:100 ,standard_deviation:30  ,property: (d) -> d.investors.quantity ))
+    charts.push(new histogram(tag: "#price"     ,title:"Price"          ,mean:200 ,standard_deviation:60  ,property: (d) -> d.environment.price ))
+
+    charts.push(new histogram(tag: "#deployment"      ,title: "Quantity deployed"   ,property: (d) -> d.deployment ))
+    charts.push(new histogram(tag: "#energyDelivered" ,title: "Energy delivered"    ,property: (d) -> d.energyDelivered ))
+    charts.push(new histogram(tag: "#publicSpend"     ,title: "Public expenditure"  , x_max: 2000, property: (d) -> d.publicSpend ))
+
+    charts.push(new scatterplot('#spendEnergyDelivered',"Spend against energy delivered",0,2000,0,300,((d) -> d.publicSpend),((d) -> d.energyDelivered)))
+    charts.push(new scatterplot('#energyPerPoundAgainstPounds',"Energy per pound of public spend against spend",0,2000,0,0.2,((d) -> d.publicSpend),((d) -> (d.energyDelivered / d.publicSpend))))
+    
+    d3.select("#startButton").on('click',() -> start(); return false)
+    d3.select("#stopButton").on('click',() -> stop(); return false)
+    d3.select("#clearButton").on('click',() -> clear(); return false)
+
+stop = () ->
+  return unless running == true
+  running = false
+  worker.terminate()
+
+start = () ->
   iterations = []
   worker = new Worker('../js/calculation.js')
+  running = true
   worker.onmessage = (event) ->
     iterations.push(event.data)
     chart.update(iterations) for chart in charts
@@ -285,3 +306,7 @@ draw = () ->
     console.log("Calculation error: " + error.message + "\n")
     throw error
   worker.postMessage();
+
+clear = () ->
+  stop()
+  chart.clear() for chart in charts
