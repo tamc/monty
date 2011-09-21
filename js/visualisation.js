@@ -332,14 +332,13 @@ start = function(number_of_iterations) {
   worker = new Worker('../js/calculation.js');
   running = true;
   worker.onmessage = function(event) {
-    var chart, _i, _len, _results;
+    var chart, _i, _len;
     iterations.push(event.data);
-    _results = [];
     for (_i = 0, _len = charts.length; _i < _len; _i++) {
       chart = charts[_i];
-      _results.push(chart.update(iterations));
+      chart.update(iterations);
     }
-    return _results;
+    return d3.select("#message}").text("" + iterations.length + " runs completed");
   };
   worker.onerror = function(error) {
     console.log("Calculation error: " + error.message + "\n");
@@ -351,13 +350,12 @@ start = function(number_of_iterations) {
   });
 };
 clear = function() {
-  var chart, _i, _len, _results;
+  var chart, _i, _len;
   stop();
   iterations = [];
-  _results = [];
   for (_i = 0, _len = charts.length; _i < _len; _i++) {
     chart = charts[_i];
-    _results.push(chart.clear());
+    chart.clear();
   }
-  return _results;
+  return d3.select("#message}").text("");
 };

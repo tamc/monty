@@ -300,6 +300,7 @@ start = (number_of_iterations = 500) ->
   worker.onmessage = (event) ->
     iterations.push(event.data)
     chart.update(iterations) for chart in charts
+    d3.select("#message}").text("#{iterations.length} runs completed")
   worker.onerror = (error) ->  
     console.log("Calculation error: " + error.message + "\n")
     throw error
@@ -309,3 +310,5 @@ clear = () ->
   stop()
   iterations = []
   chart.clear() for chart in charts
+  d3.select("#message}").text("")
+  
