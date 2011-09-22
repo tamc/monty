@@ -24,7 +24,7 @@ rect.block {
   shape-rendering: crispEdges;
 }
 
-rect.selected {
+rect.selected, rect.stickySelected {
   stroke: #aa0;
   fill: #FF0;
 }

@@ -38,7 +38,7 @@ probability_in_bin = function(bin, mean, standard_deviation, bin_width) {
   return cumulativeNormal(bin + (bin_width / 2), mean, standard_deviation) - cumulativeNormal(bin - (bin_width / 2), mean, standard_deviation);
 };
 histogram = function(opts) {
-  var block_height, block_width, iteration_to_id, key, line, nesting_operator, point_group, points, svg, tag, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
+  var block_height, block_width, iteration_to_id, key, line, nesting_operator, point_group, points, stickySelected, svg, tag, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
   if (opts == null) {
     opts = {};
   }
@@ -70,6 +70,16 @@ histogram = function(opts) {
     return y.tickFormat(opts.x_ticks)(d) + "%";
   });
   point_group = svg.append("svg:g");
+  stickySelected = false;
+  point_group.on('mousedown', function(d) {
+    console.log("mousedown");
+    d3.selectAll("rect.stickySelected").classed('stickySelected', false);
+    return stickySelected = true;
+  });
+  point_group.on('mouseup', function(d) {
+    console.log("mouseup");
+    return stickySelected = false;
+  });
   if ((opts.mean != null) && (opts.standard_deviation != null)) {
     points = x.ticks(100).map(function(d) {
       return {
@@ -111,7 +121,11 @@ histogram = function(opts) {
       return opts.height - ((i + 1) * block_height);
     }).attr("width", block_width).attr("height", block_height).on('mouseover', function(d) {
       d3.selectAll("rect.selected").classed('selected', false);
-      return d3.selectAll(".block" + d.id).classed('selected', true);
+      if (stickySelected === true) {
+        return d3.selectAll(".block" + d.id).classed('stickySelected', true);
+      } else {
+        return d3.selectAll(".block" + d.id).classed('selected', true);
+      }
     }).on('mouseout', function(d) {
       return d3.selectAll(".block" + d.id).classed('selected', false);
     });
@@ -137,7 +151,7 @@ histogram.defaults = {
   title: "Histogram"
 };
 scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_property) {
-  var block_height, block_width, h, iteration_to_id, p, point_group, svg, w, x, xrule, y, yrule;
+  var block_height, block_width, h, iteration_to_id, p, point_group, stickySelected, svg, w, x, xrule, y, yrule;
   w = 250;
   h = 250;
   p = 20;
@@ -153,6 +167,16 @@ scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_p
   yrule.append("svg:line").attr("x1", 0).attr("x2", w).attr("y1", y).attr("y2", y);
   yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(y.tickFormat(10));
   point_group = svg.append("svg:g");
+  stickySelected = false;
+  point_group.on('mousedown', function(d) {
+    console.log("mousedown");
+    d3.selectAll("rect.stickySelected").classed('stickySelected', false);
+    return stickySelected = true;
+  });
+  point_group.on('mouseup', function(d) {
+    console.log("mouseup");
+    return stickySelected = false;
+  });
   iteration_to_id = function(d) {
     return d.id;
   };
@@ -173,7 +197,11 @@ scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_p
       return y(y_property(d)) - block_height;
     }).attr("width", block_width).attr("height", block_height).on('mouseover', function(d) {
       d3.selectAll("rect.selected").classed('selected', false);
-      return d3.selectAll(".block" + d.id).classed('selected', true);
+      if (stickySelected === true) {
+        return d3.selectAll(".block" + d.id).classed('stickySelected', true);
+      } else {
+        return d3.selectAll(".block" + d.id).classed('selected', true);
+      }
     }).on('mouseout', function(d) {
       return d3.selectAll(".block" + d.id).classed('selected', false);
     });
@@ -328,6 +356,7 @@ start = function(number_of_iterations) {
   if (number_of_iterations == null) {
     number_of_iterations = 500;
   }
+  stop();
   d3.selectAll("rect.selected").classed('selected', false);
   worker = new Worker('../js/calculation.js');
   running = true;

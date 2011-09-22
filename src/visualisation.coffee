@@ -109,6 +109,11 @@ histogram = (opts = {}) ->
   
   point_group = svg.append("svg:g")
   
+  stickySelected = false  
+  point_group.on('mousedown',(d) -> console.log("mousedown"); d3.selectAll("rect.stickySelected").classed('stickySelected',false); stickySelected = true )
+  point_group.on('mouseup',(d) ->  console.log("mouseup"); stickySelected = false )
+  
+  
   if opts.mean? && opts.standard_deviation?
     # Add a normal distribution line
     points = x.ticks(100).map( (d) ->
@@ -146,15 +151,20 @@ histogram = (opts = {}) ->
     # Add a rectangle for each element in each bucket
     frequencies = values.selectAll("rect")
         .data(values_to_frequencies,iteration_to_id)       
-
-      
+        
     frequencies.enter().append("svg:rect")
         .attr("class",(d) -> "block selected block#{d.id}")
         # .attr("x", (d,i) -> x(property(d)) )
         .attr("y", (d,i) -> opts.height - ((i+1)*block_height) )
         .attr("width",block_width)
         .attr("height",block_height)
-        .on('mouseover',(d) -> d3.selectAll("rect.selected").classed('selected',false); ; d3.selectAll(".block#{d.id}").classed('selected',true))
+        .on('mouseover', (d) -> 
+          d3.selectAll("rect.selected").classed('selected',false)
+          if stickySelected == true
+            d3.selectAll(".block#{d.id}").classed('stickySelected',true)
+          else
+            d3.selectAll(".block#{d.id}").classed('selected',true)
+        )
         .on('mouseout', (d) -> d3.selectAll(".block#{d.id}").classed('selected',false))
     
     frequencies.exit().remove()
@@ -230,6 +240,9 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
       .text(y.tickFormat(10));
   
   point_group = svg.append("svg:g")
+  stickySelected = false  
+  point_group.on('mousedown',(d) -> console.log("mousedown"); d3.selectAll("rect.stickySelected").classed('stickySelected',false); stickySelected = true )
+  point_group.on('mouseup',(d) ->  console.log("mouseup"); stickySelected = false )  
   
   iteration_to_id = (d) -> d.id
   block_width = 5
@@ -251,7 +264,13 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
         .attr("y", (d) -> y(y_property(d))-block_height )
         .attr("width",block_width)
         .attr("height",block_height)
-        .on('mouseover',(d) -> d3.selectAll("rect.selected").classed('selected',false); d3.selectAll(".block#{d.id}").classed('selected',true))
+        .on('mouseover', (d) -> 
+          d3.selectAll("rect.selected").classed('selected',false)
+          if stickySelected == true
+            d3.selectAll(".block#{d.id}").classed('stickySelected',true)
+          else
+            d3.selectAll(".block#{d.id}").classed('selected',true)
+        )
         .on('mouseout', (d) -> d3.selectAll(".block#{d.id}").classed('selected',false))
 
     frequencies.exit().remove()
@@ -294,6 +313,7 @@ stop = () ->
   worker.terminate()
 
 start = (number_of_iterations = 500) ->  
+  stop()
   d3.selectAll("rect.selected").classed('selected',false)
   worker = new Worker('../js/calculation.js')
   running = true
