@@ -125,7 +125,6 @@ histogram = (opts = {}) ->
       .attr("transform","rotate(-90)translate(0,-#{(opts.width/2)+30})")
       .text(opts.y_axis_title)
 
-  
   point_group = svg.append("svg:g")
   
   stickySelected = false  
@@ -209,25 +208,28 @@ histogram.defaults =
   y_axis_suffix: "%"
   y_axis_title: "Probability"
 
-scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
-  w = 250
-  h = 250
-  p = 20
-  x = d3.scale.linear().domain([x_low,x_high]).range([0, w])
-  y = d3.scale.linear().domain([y_low,y_high]).range([h, 0])
+scatterplot = (opts = {}) ->
+  # Set default options
+  for own key, value of scatterplot.defaults
+    opts[key] = value unless opts[key]?
+    
+  # Set up scales
+  x = d3.scale.linear().domain([opts.x_min,opts.x_max]).range([0, opts.width])
+  y = d3.scale.linear().domain([opts.y_min,opts.y_max]).range([opts.height, 0])
+    
+  tag = d3.select(opts.tag)
 
-  tag = d3.select(tag)
+  tag.append("h2").text(opts.title) if opts.title?
 
-  tag.append("h2").text(title)
-
+  # Add a transformation box so we leave space around the edges for axis
   svg = tag.append("svg:svg")
-      .attr("width", w + p * 2)
-      .attr("height", h + p * 2)
+      .attr("width", opts.width + opts.padding * 2)
+      .attr("height", opts.height + opts.padding * 2)
     .append("svg:g")
-      .attr("transform", "translate(" + p + "," + p + ")")
-
+      .attr("transform", "translate(" + opts.padding + "," + opts.padding + ")")
+  
   xrule = svg.selectAll("g.x")
-      .data(x.ticks(10))
+      .data(x.ticks(opts.x_ticks))
     .enter().append("svg:g")
       .attr("class", "x");
 
@@ -235,23 +237,32 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
       .attr("x1", x)
       .attr("x2", x)
       .attr("y1", 0)
-      .attr("y2", h);
+      .attr("y2", opts.height);
 
   xrule.append("svg:text")
       .attr("x", x)
-      .attr("y", h + 3)
+      .attr("y", opts.height + 3)
       .attr("dy", ".71em")
       .attr("text-anchor", "middle")
-      .text(x.tickFormat(10));
+      .text( (d) -> x.tickFormat(opts.x_ticks)(d)+opts.x_axis_suffix );
 
+  if opts.x_axis_title?    
+    svg.append("svg:text")
+      .attr("x",opts.width/2)
+      .attr("y", opts.height + 18)
+      .attr("dy", ".71em")
+      .attr("text-anchor", "middle")
+      .text(opts.x_axis_title)
+
+  
   yrule = svg.selectAll("g.y")
-      .data(y.ticks(10))
+      .data(y.ticks(opts.y_ticks))
     .enter().append("svg:g")
       .attr("class", "y");
 
   yrule.append("svg:line")
       .attr("x1", 0)
-      .attr("x2", w)
+      .attr("x2", opts.width)
       .attr("y1", y)
       .attr("y2", y);
 
@@ -260,8 +271,17 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
       .attr("y", y)
       .attr("dy", ".35em")
       .attr("text-anchor", "end")
-      .text(y.tickFormat(10));
+      .text( (d) -> y.tickFormat(opts.y_ticks)(d)+opts.y_axis_suffix );
   
+  if opts.y_axis_title?
+    svg.append("svg:text")
+      .attr("x",-opts.height/2)
+      .attr("y", opts.width / 2)
+      .attr("dy", ".31em")
+      .attr("text-anchor", "middle")
+      .attr("transform","rotate(-90)translate(0,-#{(opts.width/2)+30})")
+      .text(opts.y_axis_title)
+
   point_group = svg.append("svg:g")
   stickySelected = false  
   point_group.on('mousedown',(d) -> console.log("mousedown"); d3.selectAll("rect.stickySelected").classed('stickySelected',false); stickySelected = true )
@@ -283,8 +303,8 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
 
     frequencies.enter().append("svg:rect")
         .attr("class",(d) -> "block selected block#{d.id}")
-        .attr("x", (d) -> x(x_property(d)) )
-        .attr("y", (d) -> y(y_property(d))-block_height )
+        .attr("x", (d) -> x(opts.x_property(d)) )
+        .attr("y", (d) -> y(opts.y_property(d))-block_height )
         .attr("width",block_width)
         .attr("height",block_height)
         .on('mouseover', (d) -> 
@@ -300,6 +320,25 @@ scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
 
   this
 
+scatterplot.defaults =
+  tag:      "body"
+  width:    250
+  height:   250
+  padding:  35
+  x_min:    0
+  x_max:    300
+  y_min:    0
+  y_max:    10
+  x_ticks:  10
+  y_ticks:  10
+  x_property: (d) -> d
+  y_property: (d) -> d  
+  title:    null
+  x_axis_suffix: ""
+  x_axis_title: null 
+  y_axis_suffix: ""
+  y_axis_title: null
+
 charts = []
 iterations = []
 running = false
@@ -310,17 +349,19 @@ setup = () ->
     charts.push(new histogram(tag: '#capital'   ,x_axis_title:"Capital cost £/kW"   ,mean:100 ,standard_deviation:30  ,property: (d) -> d.technology.capital_cost))
     charts.push(new histogram(tag: "#operating" ,x_axis_title:"Operating cost £/MWh" ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.operating_cost ))
     charts.push(new histogram(tag: "#fuel"      ,x_axis_title:"Fuel cost £/MWh"      ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.fuel_cost ))
-    charts.push(new histogram(tag: "#output"    ,x_axis_title:"Efficiency", x_axis_suffix: "%"         ,mean:1   ,standard_deviation:0.3 ,property: ((d) -> d.technology.output), x_max: 2  ))
+    charts.push(new histogram(tag: "#efficiency"    ,x_axis_title:"Efficiency", x_axis_suffix: "%"         ,mean:1   ,standard_deviation:0.3 ,property: ((d) -> d.technology.efficiency), x_max: 2  ))
+    charts.push(new histogram(tag: "#availability"    ,x_axis_title:"Availability", x_axis_suffix: "%"         ,mean:1   ,standard_deviation:0.3 ,property: ((d) -> d.technology.availability), x_max: 2  ))
+
     charts.push(new histogram(tag: "#hurdle"    ,x_axis_title:"Investor's hurdle rate", x_axis_suffix: "%"    ,mean:10 ,standard_deviation:3,property: ((d) -> d.investors.hurdle_rate * 100), x_max: 20 ))
-    charts.push(new histogram(tag: "#quantity"  ,x_axis_title:"Number of investors"      ,mean:100 ,standard_deviation:30  ,property: (d) -> d.investors.quantity ))
+    charts.push(new histogram(tag: "#quantity"  ,x_axis_title:"Investor's capital available £"      ,mean:100 ,standard_deviation:30  ,property: (d) -> d.investors.quantity ))
     charts.push(new histogram(tag: "#price"     ,x_axis_title:"Price of electricity £/MWh"          ,mean:200 ,standard_deviation:60  ,property: (d) -> d.environment.price ))
 
-    charts.push(new histogram(tag: "#deployment"      ,title: "Quantity deployed"   ,property: (d) -> d.deployment ))
-    charts.push(new histogram(tag: "#energyDelivered" ,title: "Energy delivered"    ,property: (d) -> d.energyDelivered ))
-    charts.push(new histogram(tag: "#publicSpend"     ,title: "Public expenditure"  , x_max: 2000, property: (d) -> d.publicSpend ))
+    charts.push(new histogram(tag: "#deployment"      ,x_axis_title: "Quantity deployed MW"   ,property: (d) -> d.deployment ))
+    charts.push(new histogram(tag: "#energyDelivered" ,x_axis_title: "Energy delivered MWh"    ,property: (d) -> d.energyDelivered ))
+    charts.push(new histogram(tag: "#publicSpend"     ,x_axis_title: "Public expenditure £"  , x_max: 2000, property: (d) -> d.publicSpend ))
 
-    charts.push(new scatterplot('#spendEnergyDelivered',"Spend against energy delivered",0,2000,0,300,((d) -> d.publicSpend),((d) -> d.energyDelivered)))
-    charts.push(new scatterplot('#energyPerPoundAgainstPounds',"Energy per pound of public spend against spend",0,2000,0,0.2,((d) -> d.publicSpend),((d) -> (d.energyDelivered / d.publicSpend))))
+    charts.push(new scatterplot(tag: '#spendEnergyDelivered', x_axis_title: "Public expenditure £", y_axis_title: "Energy delivered MWh", x_max: 2000, y_max: 300, x_property: ((d) -> d.publicSpend), y_property: ((d) -> d.energyDelivered)))
+    charts.push(new scatterplot(tag: '#energyPerPoundAgainstPounds',x_axis_title: "Public expenditure £", y_axis_title: "Energy per pound of public spend MWh/£",x_max:2000,y_max: 0.2,x_property: ((d) -> d.publicSpend), y_property: ((d) -> (d.energyDelivered / d.publicSpend))))
     
     d3.select("#oneRun").on('click',() -> start(1); return false)
     d3.select("#tenRuns").on('click',() -> start(10); return false)

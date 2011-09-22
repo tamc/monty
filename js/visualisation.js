@@ -164,22 +164,42 @@ histogram.defaults = {
   y_axis_suffix: "%",
   y_axis_title: "Probability"
 };
-scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_property) {
-  var block_height, block_width, h, iteration_to_id, p, point_group, stickySelected, svg, w, x, xrule, y, yrule;
-  w = 250;
-  h = 250;
-  p = 20;
-  x = d3.scale.linear().domain([x_low, x_high]).range([0, w]);
-  y = d3.scale.linear().domain([y_low, y_high]).range([h, 0]);
-  tag = d3.select(tag);
-  tag.append("h2").text(title);
-  svg = tag.append("svg:svg").attr("width", w + p * 2).attr("height", h + p * 2).append("svg:g").attr("transform", "translate(" + p + "," + p + ")");
-  xrule = svg.selectAll("g.x").data(x.ticks(10)).enter().append("svg:g").attr("class", "x");
-  xrule.append("svg:line").attr("x1", x).attr("x2", x).attr("y1", 0).attr("y2", h);
-  xrule.append("svg:text").attr("x", x).attr("y", h + 3).attr("dy", ".71em").attr("text-anchor", "middle").text(x.tickFormat(10));
-  yrule = svg.selectAll("g.y").data(y.ticks(10)).enter().append("svg:g").attr("class", "y");
-  yrule.append("svg:line").attr("x1", 0).attr("x2", w).attr("y1", y).attr("y2", y);
-  yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(y.tickFormat(10));
+scatterplot = function(opts) {
+  var block_height, block_width, iteration_to_id, key, point_group, stickySelected, svg, tag, value, x, xrule, y, yrule, _ref;
+  if (opts == null) {
+    opts = {};
+  }
+  _ref = scatterplot.defaults;
+  for (key in _ref) {
+    if (!__hasProp.call(_ref, key)) continue;
+    value = _ref[key];
+    if (opts[key] == null) {
+      opts[key] = value;
+    }
+  }
+  x = d3.scale.linear().domain([opts.x_min, opts.x_max]).range([0, opts.width]);
+  y = d3.scale.linear().domain([opts.y_min, opts.y_max]).range([opts.height, 0]);
+  tag = d3.select(opts.tag);
+  if (opts.title != null) {
+    tag.append("h2").text(opts.title);
+  }
+  svg = tag.append("svg:svg").attr("width", opts.width + opts.padding * 2).attr("height", opts.height + opts.padding * 2).append("svg:g").attr("transform", "translate(" + opts.padding + "," + opts.padding + ")");
+  xrule = svg.selectAll("g.x").data(x.ticks(opts.x_ticks)).enter().append("svg:g").attr("class", "x");
+  xrule.append("svg:line").attr("x1", x).attr("x2", x).attr("y1", 0).attr("y2", opts.height);
+  xrule.append("svg:text").attr("x", x).attr("y", opts.height + 3).attr("dy", ".71em").attr("text-anchor", "middle").text(function(d) {
+    return x.tickFormat(opts.x_ticks)(d) + opts.x_axis_suffix;
+  });
+  if (opts.x_axis_title != null) {
+    svg.append("svg:text").attr("x", opts.width / 2).attr("y", opts.height + 18).attr("dy", ".71em").attr("text-anchor", "middle").text(opts.x_axis_title);
+  }
+  yrule = svg.selectAll("g.y").data(y.ticks(opts.y_ticks)).enter().append("svg:g").attr("class", "y");
+  yrule.append("svg:line").attr("x1", 0).attr("x2", opts.width).attr("y1", y).attr("y2", y);
+  yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(function(d) {
+    return y.tickFormat(opts.y_ticks)(d) + opts.y_axis_suffix;
+  });
+  if (opts.y_axis_title != null) {
+    svg.append("svg:text").attr("x", -opts.height / 2).attr("y", opts.width / 2).attr("dy", ".31em").attr("text-anchor", "middle").attr("transform", "rotate(-90)translate(0,-" + ((opts.width / 2) + 30) + ")").text(opts.y_axis_title);
+  }
   point_group = svg.append("svg:g");
   stickySelected = false;
   point_group.on('mousedown', function(d) {
@@ -206,9 +226,9 @@ scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_p
     frequencies.enter().append("svg:rect").attr("class", function(d) {
       return "block selected block" + d.id;
     }).attr("x", function(d) {
-      return x(x_property(d));
+      return x(opts.x_property(d));
     }).attr("y", function(d) {
-      return y(y_property(d)) - block_height;
+      return y(opts.y_property(d)) - block_height;
     }).attr("width", block_width).attr("height", block_height).on('mouseover', function(d) {
       d3.selectAll("rect.selected").classed('selected', false);
       if (stickySelected === true) {
@@ -222,6 +242,29 @@ scatterplot = function(tag, title, x_low, x_high, y_low, y_high, x_property, y_p
     return frequencies.exit().remove();
   };
   return this;
+};
+scatterplot.defaults = {
+  tag: "body",
+  width: 250,
+  height: 250,
+  padding: 35,
+  x_min: 0,
+  x_max: 300,
+  y_min: 0,
+  y_max: 10,
+  x_ticks: 10,
+  y_ticks: 10,
+  x_property: function(d) {
+    return d;
+  },
+  y_property: function(d) {
+    return d;
+  },
+  title: null,
+  x_axis_suffix: "",
+  x_axis_title: null,
+  y_axis_suffix: "",
+  y_axis_title: null
 };
 charts = [];
 iterations = [];
@@ -256,13 +299,24 @@ setup = function() {
     }
   }));
   charts.push(new histogram({
-    tag: "#output",
+    tag: "#efficiency",
     x_axis_title: "Efficiency",
     x_axis_suffix: "%",
     mean: 1,
     standard_deviation: 0.3,
     property: (function(d) {
-      return d.technology.output;
+      return d.technology.efficiency;
+    }),
+    x_max: 2
+  }));
+  charts.push(new histogram({
+    tag: "#availability",
+    x_axis_title: "Availability",
+    x_axis_suffix: "%",
+    mean: 1,
+    standard_deviation: 0.3,
+    property: (function(d) {
+      return d.technology.availability;
     }),
     x_max: 2
   }));
@@ -279,7 +333,7 @@ setup = function() {
   }));
   charts.push(new histogram({
     tag: "#quantity",
-    x_axis_title: "Number of investors",
+    x_axis_title: "Investor's capital available £",
     mean: 100,
     standard_deviation: 30,
     property: function(d) {
@@ -297,36 +351,52 @@ setup = function() {
   }));
   charts.push(new histogram({
     tag: "#deployment",
-    title: "Quantity deployed",
+    x_axis_title: "Quantity deployed MW",
     property: function(d) {
       return d.deployment;
     }
   }));
   charts.push(new histogram({
     tag: "#energyDelivered",
-    title: "Energy delivered",
+    x_axis_title: "Energy delivered MWh",
     property: function(d) {
       return d.energyDelivered;
     }
   }));
   charts.push(new histogram({
     tag: "#publicSpend",
-    title: "Public expenditure",
+    x_axis_title: "Public expenditure £",
     x_max: 2000,
     property: function(d) {
       return d.publicSpend;
     }
   }));
-  charts.push(new scatterplot('#spendEnergyDelivered', "Spend against energy delivered", 0, 2000, 0, 300, (function(d) {
-    return d.publicSpend;
-  }), (function(d) {
-    return d.energyDelivered;
-  })));
-  charts.push(new scatterplot('#energyPerPoundAgainstPounds', "Energy per pound of public spend against spend", 0, 2000, 0, 0.2, (function(d) {
-    return d.publicSpend;
-  }), (function(d) {
-    return d.energyDelivered / d.publicSpend;
-  })));
+  charts.push(new scatterplot({
+    tag: '#spendEnergyDelivered',
+    x_axis_title: "Public expenditure £",
+    y_axis_title: "Energy delivered MWh",
+    x_max: 2000,
+    y_max: 300,
+    x_property: (function(d) {
+      return d.publicSpend;
+    }),
+    y_property: (function(d) {
+      return d.energyDelivered;
+    })
+  }));
+  charts.push(new scatterplot({
+    tag: '#energyPerPoundAgainstPounds',
+    x_axis_title: "Public expenditure £",
+    y_axis_title: "Energy per pound of public spend MWh/£",
+    x_max: 2000,
+    y_max: 0.2,
+    x_property: (function(d) {
+      return d.publicSpend;
+    }),
+    y_property: (function(d) {
+      return d.energyDelivered / d.publicSpend;
+    })
+  }));
   d3.select("#oneRun").on('click', function() {
     start(1);
     return false;
