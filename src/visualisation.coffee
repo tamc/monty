@@ -62,7 +62,7 @@ histogram = (opts = {}) ->
   
   # Start the drawing by setting up the surround
   tag = d3.select(opts.tag)
-  tag.append("h2").text(opts.title)
+  tag.append("h2").text(opts.title) if opts.title?
   
   # Add a transformation box so we leave space around the edges for axis
   svg = tag.append("svg:svg")
@@ -87,7 +87,16 @@ histogram = (opts = {}) ->
       .attr("y", opts.height + 3)
       .attr("dy", ".71em")
       .attr("text-anchor", "middle")
-      .text(x.tickFormat(opts.x_ticks));
+      .text( (d) -> x.tickFormat(opts.x_ticks)(d)+opts.x_axis_suffix );
+
+  if opts.x_axis_title?    
+    svg.append("svg:text")
+      .attr("x",opts.width/2)
+      .attr("y", opts.height + 18)
+      .attr("dy", ".71em")
+      .attr("text-anchor", "middle")
+      .text(opts.x_axis_title)
+
   
   yrule = svg.selectAll("g.y")
       .data(y.ticks(opts.y_ticks))
@@ -105,7 +114,17 @@ histogram = (opts = {}) ->
       .attr("y", y)
       .attr("dy", ".35em")
       .attr("text-anchor", "end")
-      .text( (d) -> y.tickFormat(opts.x_ticks)(d)+"%" );
+      .text( (d) -> y.tickFormat(opts.y_ticks)(d)+opts.y_axis_suffix );
+  
+  if opts.y_axis_title?
+    svg.append("svg:text")
+      .attr("x",-opts.height/2)
+      .attr("y", opts.width / 2)
+      .attr("dy", ".31em")
+      .attr("text-anchor", "middle")
+      .attr("transform","rotate(-90)translate(0,-#{(opts.width/2)+30})")
+      .text(opts.y_axis_title)
+
   
   point_group = svg.append("svg:g")
   
@@ -175,7 +194,7 @@ histogram.defaults =
   tag:      "body"
   width:    250
   height:   250
-  padding:  30
+  padding:  35
   x_min:    0
   x_max:    300
   y_min:    0
@@ -184,7 +203,11 @@ histogram.defaults =
   y_ticks:  10
   property: (d) -> d
   bins:     50
-  title:    "Histogram"
+  title:    null
+  x_axis_suffix: ""
+  x_axis_title: null 
+  y_axis_suffix: "%"
+  y_axis_title: "Probability"
 
 scatterplot = (tag,title,x_low,x_high,y_low,y_high,x_property,y_property) ->
   w = 250
@@ -284,14 +307,13 @@ worker = null
 
 setup = () ->
     # Inputs
-    charts.push(new histogram(tag: '#capital'   ,title:"Capital cost"   ,mean:100 ,standard_deviation:30  ,property: (d) -> d.technology.capital_cost))
-    charts.push(new histogram(tag: "#capital"   ,title:"Capital cost"   ,mean:100 ,standard_deviation:20  ,property: (d) -> d.technology.capital_cost ))
-    charts.push(new histogram(tag: "#operating" ,title:"Operating cost" ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.operating_cost ))
-    charts.push(new histogram(tag: "#fuel"      ,title:"Fuel cost"      ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.fuel_cost ))
-    charts.push(new histogram(tag: "#output"    ,title:"Output"         ,mean:1   ,standard_deviation:0.3 ,property: ((d) -> d.technology.output), x_max: 2  ))
-    charts.push(new histogram(tag: "#hurdle"    ,title:"Hurdle rate"    ,mean:10 ,standard_deviation:3,property: ((d) -> d.investors.hurdle_rate * 100), x_max: 20 ))
-    charts.push(new histogram(tag: "#quantity"  ,title:"Investors"      ,mean:100 ,standard_deviation:30  ,property: (d) -> d.investors.quantity ))
-    charts.push(new histogram(tag: "#price"     ,title:"Price"          ,mean:200 ,standard_deviation:60  ,property: (d) -> d.environment.price ))
+    charts.push(new histogram(tag: '#capital'   ,x_axis_title:"Capital cost £/kW"   ,mean:100 ,standard_deviation:30  ,property: (d) -> d.technology.capital_cost))
+    charts.push(new histogram(tag: "#operating" ,x_axis_title:"Operating cost £/MWh" ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.operating_cost ))
+    charts.push(new histogram(tag: "#fuel"      ,x_axis_title:"Fuel cost £/MWh"      ,mean:100 ,standard_deviation:50  ,property: (d) -> d.technology.fuel_cost ))
+    charts.push(new histogram(tag: "#output"    ,x_axis_title:"Efficiency", x_axis_suffix: "%"         ,mean:1   ,standard_deviation:0.3 ,property: ((d) -> d.technology.output), x_max: 2  ))
+    charts.push(new histogram(tag: "#hurdle"    ,x_axis_title:"Investor's hurdle rate", x_axis_suffix: "%"    ,mean:10 ,standard_deviation:3,property: ((d) -> d.investors.hurdle_rate * 100), x_max: 20 ))
+    charts.push(new histogram(tag: "#quantity"  ,x_axis_title:"Number of investors"      ,mean:100 ,standard_deviation:30  ,property: (d) -> d.investors.quantity ))
+    charts.push(new histogram(tag: "#price"     ,x_axis_title:"Price of electricity £/MWh"          ,mean:200 ,standard_deviation:60  ,property: (d) -> d.environment.price ))
 
     charts.push(new histogram(tag: "#deployment"      ,title: "Quantity deployed"   ,property: (d) -> d.deployment ))
     charts.push(new histogram(tag: "#energyDelivered" ,title: "Energy delivered"    ,property: (d) -> d.energyDelivered ))
