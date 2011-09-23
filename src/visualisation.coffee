@@ -157,17 +157,24 @@ histogram = (opts = {}) ->
   point_group = svg.append("svg:g")
   
   # This is used for highlighting more than one block
-  stickySelected = false  
-  # point_group.on('mousedown',(d) -> d3.selectAll("rect.stickySelected").classed('stickySelected',false); stickySelected = true )
-  # point_group.on('mouseup',(d) ->  stickySelected = false )
+  stickySelected = false
+  point_group.on('mousedown',(d) -> 
+    # d3.selectAll("rect.selected").classed('selected',false).style("fill","grey"); 
+    stickySelected = true
+    d3.event.preventDefault())
+  point_group.on('mouseup',(d) ->  stickySelected = false )
+  
+  empty = true
   
   distribution_move = (d) ->
+    return unless empty == true
     # Get the mouse coordinates relative to the origin of the svg group
     m = d3.svg.mouse(svg.node())    
     # Translate those coordinates into mean and probability
     opts.mean = x.invert(m[0])
     opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1])/100,opts.mean, x_step) 
     drawDistributionLine()
+    d3.event.preventDefault();
       
   click_rect.on('click', distribution_move )
     
@@ -187,7 +194,7 @@ histogram = (opts = {}) ->
     curve.enter().append('svg:path')
         .attr('class','distribution')
     
-    curve.attr('d',line)
+    curve.transition().duration(500).attr('d',line)
     
     curve.on
   
@@ -200,10 +207,12 @@ histogram = (opts = {}) ->
   # Removes histogram points from the chart
   @clear = () ->    
     point_group.selectAll("g.value").remove()
+    empty = true
   
   # Updates the histogram points on the chart
   @update = (data) ->
-        
+    empty = false
+    
     # Turn the data into buckets    
     buckets = nesting_operator.entries(data)
     
@@ -222,19 +231,20 @@ histogram = (opts = {}) ->
         .data(values_to_frequencies,iteration_to_id)       
         
     frequencies.enter().append("svg:rect")
-        .attr("class",(d) -> "block selected block#{d.id}")
-        # .attr("x", (d,i) -> x(property(d)) )
+        .attr("class",(d) -> "block block#{d.id}")
         .attr("y", (d,i) -> opts.height - ((i+1)*block_height) )
         .attr("width",block_width)
         .attr("height",block_height)
-        .on('mouseover', (d) -> 
-          d3.selectAll("rect.selected").classed('selected',false)
-          if stickySelected == true
-            d3.selectAll(".block#{d.id}").classed('stickySelected',true)
-          else
-            d3.selectAll(".block#{d.id}").classed('selected',true)
+        .on('mouseover', (d) -> console.log("over"); d3.selectAll(".block#{d.id}").classed("selected",true).style("fill", "yellow") )
+        .on('mouseout', (d) -> 
+          return if stickySelected == true
+          d3.selectAll("rect.selected").classed("selected",false).style("fill", "grey")
         )
-        .on('mouseout', (d) -> d3.selectAll(".block#{d.id}").classed('selected',false))
+        .style("fill", "yellow")
+        .transition()
+          .duration(1000)
+          .style("fill", "grey");
+          
     
     frequencies.exit().remove()
   
@@ -350,10 +360,8 @@ scatterplot = (opts = {}) ->
     frequencies = point_group.selectAll("rect.block")
         .data(data,iteration_to_id)       
 
-    frequencies.classed('newblock',false)
-
     frequencies.enter().append("svg:rect")
-        .attr("class",(d) -> "block selected block#{d.id}")
+        .attr("class",(d) -> "block block#{d.id}")
         .attr("x", (d) -> x(opts.x_property(d)) )
         .attr("y", (d) -> y(opts.y_property(d))-block_height )
         .attr("width",block_width)
@@ -366,7 +374,11 @@ scatterplot = (opts = {}) ->
             d3.selectAll(".block#{d.id}").classed('selected',true)
         )
         .on('mouseout', (d) -> d3.selectAll(".block#{d.id}").classed('selected',false))
-
+        .style("fill", "yellow")
+        .transition()
+          .duration(1000)
+          .style("fill", "grey");
+        
     frequencies.exit().remove()
 
   this

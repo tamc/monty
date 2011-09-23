@@ -56,7 +56,7 @@ inverse_probability_in_mean_bin = function(probability, mean, bin_width, guess_s
   }
 };
 histogram = function(opts) {
-  var block_height, block_width, click_rect, distribution_move, drawDistributionLine, iteration_to_id, key, nesting_operator, point_group, stickySelected, svg, tag, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
+  var block_height, block_width, click_rect, distribution_move, drawDistributionLine, empty, iteration_to_id, key, nesting_operator, point_group, stickySelected, svg, tag, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
   if (opts == null) {
     opts = {};
   }
@@ -100,12 +100,24 @@ histogram = function(opts) {
   }
   point_group = svg.append("svg:g");
   stickySelected = false;
+  point_group.on('mousedown', function(d) {
+    stickySelected = true;
+    return d3.event.preventDefault();
+  });
+  point_group.on('mouseup', function(d) {
+    return stickySelected = false;
+  });
+  empty = true;
   distribution_move = function(d) {
     var m;
+    if (empty !== true) {
+      return;
+    }
     m = d3.svg.mouse(svg.node());
     opts.mean = x.invert(m[0]);
     opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1]) / 100, opts.mean, x_step);
-    return drawDistributionLine();
+    drawDistributionLine();
+    return d3.event.preventDefault();
   };
   click_rect.on('click', distribution_move);
   drawDistributionLine = function() {
@@ -126,7 +138,7 @@ histogram = function(opts) {
     });
     curve = svg.selectAll('path.distribution').data([points]);
     curve.enter().append('svg:path').attr('class', 'distribution');
-    curve.attr('d', line);
+    curve.transition().duration(500).attr('d', line);
     return curve.on;
   };
   drawDistributionLine();
@@ -140,10 +152,12 @@ histogram = function(opts) {
     return +d.id;
   };
   this.clear = function() {
-    return point_group.selectAll("g.value").remove();
+    point_group.selectAll("g.value").remove();
+    return empty = true;
   };
   this.update = function(data) {
     var buckets, frequencies, values;
+    empty = false;
     buckets = nesting_operator.entries(data);
     values = point_group.selectAll("g.value").data(buckets, values_to_ids);
     values.enter().append("svg:g").attr("class", "value").attr("transform", function(d) {
@@ -152,19 +166,18 @@ histogram = function(opts) {
     values.exit().remove();
     frequencies = values.selectAll("rect").data(values_to_frequencies, iteration_to_id);
     frequencies.enter().append("svg:rect").attr("class", function(d) {
-      return "block selected block" + d.id;
+      return "block block" + d.id;
     }).attr("y", function(d, i) {
       return opts.height - ((i + 1) * block_height);
     }).attr("width", block_width).attr("height", block_height).on('mouseover', function(d) {
-      d3.selectAll("rect.selected").classed('selected', false);
-      if (stickySelected === true) {
-        return d3.selectAll(".block" + d.id).classed('stickySelected', true);
-      } else {
-        return d3.selectAll(".block" + d.id).classed('selected', true);
-      }
+      console.log("over");
+      return d3.selectAll(".block" + d.id).classed("selected", true).style("fill", "yellow");
     }).on('mouseout', function(d) {
-      return d3.selectAll(".block" + d.id).classed('selected', false);
-    });
+      if (stickySelected === true) {
+        return;
+      }
+      return d3.selectAll("rect.selected").classed("selected", false).style("fill", "grey");
+    }).style("fill", "yellow").transition().duration(1000).style("fill", "grey");
     return frequencies.exit().remove();
   };
   return this;
@@ -248,9 +261,8 @@ scatterplot = function(opts) {
   this.update = function(data) {
     var frequencies;
     frequencies = point_group.selectAll("rect.block").data(data, iteration_to_id);
-    frequencies.classed('newblock', false);
     frequencies.enter().append("svg:rect").attr("class", function(d) {
-      return "block selected block" + d.id;
+      return "block block" + d.id;
     }).attr("x", function(d) {
       return x(opts.x_property(d));
     }).attr("y", function(d) {
@@ -264,7 +276,7 @@ scatterplot = function(opts) {
       }
     }).on('mouseout', function(d) {
       return d3.selectAll(".block" + d.id).classed('selected', false);
-    });
+    }).style("fill", "yellow").transition().duration(1000).style("fill", "grey");
     return frequencies.exit().remove();
   };
   return this;
