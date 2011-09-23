@@ -43,6 +43,18 @@ cumulativeNormal = (x,mean,standard_deviation) ->
 
 probability_in_bin = (bin,mean,standard_deviation,bin_width) ->
   cumulativeNormal(bin+(bin_width/2),mean,standard_deviation) - cumulativeNormal(bin-(bin_width/2),mean,standard_deviation)
+  
+inverse_probability_in_mean_bin = (probability, mean, bin_width, guess_step = bin_width, standard_deviation_guess = 0.0) ->
+  while probability_in_bin(mean,mean,standard_deviation_guess,bin_width) > probability
+    standard_deviation_guess = standard_deviation_guess + guess_step
+  
+  error = probability - probability_in_bin(mean,mean,standard_deviation_guess,bin_width)
+
+  if error > 0.001
+    return inverse_probability_in_mean_bin(probability,mean,bin_width, guess_step / 10, standard_deviation_guess - guess_step)
+  else
+    return standard_deviation_guess  
+  
 
 # Drawing a histogram
 histogram = (opts = {}) ->
@@ -69,26 +81,39 @@ histogram = (opts = {}) ->
       .attr("width", opts.width + opts.padding * 2)
       .attr("height", opts.height + opts.padding * 2)
     .append("svg:g")
+      .attr("class","main")
       .attr("transform", "translate(" + opts.padding + "," + opts.padding + ")")
   
+  # This captures clicks
+  click_rect = svg.append("svg:rect")
+    .attr("class","click")
+    .attr("x", 0 )
+    .attr("y", 0 )
+    .attr("width", opts.width )
+    .attr("height", opts.height)
+  
+  # x-axis groups
   xrule = svg.selectAll("g.x")
       .data(x.ticks(opts.x_ticks))
     .enter().append("svg:g")
       .attr("class", "x");
 
+  # vertical lines on chart
   xrule.append("svg:line")
       .attr("x1", x)
       .attr("x2", x)
       .attr("y1", 0)
       .attr("y2", opts.height);
-
+  
+  # x-axis labels
   xrule.append("svg:text")
       .attr("x", x)
       .attr("y", opts.height + 3)
       .attr("dy", ".71em")
       .attr("text-anchor", "middle")
       .text( (d) -> x.tickFormat(opts.x_ticks)(d)+opts.x_axis_suffix );
-
+  
+  # x-axis title
   if opts.x_axis_title?    
     svg.append("svg:text")
       .attr("x",opts.width/2)
@@ -96,19 +121,21 @@ histogram = (opts = {}) ->
       .attr("dy", ".71em")
       .attr("text-anchor", "middle")
       .text(opts.x_axis_title)
-
   
+  # y-axis groups
   yrule = svg.selectAll("g.y")
       .data(y.ticks(opts.y_ticks))
     .enter().append("svg:g")
       .attr("class", "y");
-
+  
+  # horizontal lines
   yrule.append("svg:line")
       .attr("x1", 0)
       .attr("x2", opts.width)
       .attr("y1", y)
       .attr("y2", y);
-
+  
+  # y-axis labels
   yrule.append("svg:text")
       .attr("x", -3)
       .attr("y", y)
@@ -116,6 +143,7 @@ histogram = (opts = {}) ->
       .attr("text-anchor", "end")
       .text( (d) -> y.tickFormat(opts.y_ticks)(d)+opts.y_axis_suffix );
   
+  # optional y-axis titles
   if opts.y_axis_title?
     svg.append("svg:text")
       .attr("x",-opts.height/2)
@@ -124,33 +152,56 @@ histogram = (opts = {}) ->
       .attr("text-anchor", "middle")
       .attr("transform","rotate(-90)translate(0,-#{(opts.width/2)+30})")
       .text(opts.y_axis_title)
-
+  
+  # Group to hold all the points
   point_group = svg.append("svg:g")
   
+  # This is used for highlighting more than one block
   stickySelected = false  
-  point_group.on('mousedown',(d) -> console.log("mousedown"); d3.selectAll("rect.stickySelected").classed('stickySelected',false); stickySelected = true )
-  point_group.on('mouseup',(d) ->  console.log("mouseup"); stickySelected = false )
+  # point_group.on('mousedown',(d) -> d3.selectAll("rect.stickySelected").classed('stickySelected',false); stickySelected = true )
+  # point_group.on('mouseup',(d) ->  stickySelected = false )
   
-  
-  if opts.mean? && opts.standard_deviation?
-    # Add a normal distribution line
-    points = x.ticks(100).map( (d) ->
-      {x:d, y: probability_in_bin(d,opts.mean,opts.standard_deviation,x_step)*100 }
-      )
+  distribution_move = (d) ->
+    # Get the mouse coordinates relative to the origin of the svg group
+    m = d3.svg.mouse(svg.node())    
+    # Translate those coordinates into mean and probability
+    opts.mean = x.invert(m[0])
+    opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1])/100,opts.mean, x_step) 
+    drawDistributionLine()
+      
+  click_rect.on('click', distribution_move )
     
+  # Draws a distribution line
+  drawDistributionLine = () ->
+    return unless opts.mean? && opts.standard_deviation?
+
+    # Point to line mapping
     line = d3.svg.line().x((d) -> x(d.x)).y((d) -> y(d.y))
-  
-    svg.append('svg:path')
+    
+    # Calculate the points
+    points = x.ticks(100).map( (d) -> {x:d, y: probability_in_bin(d,opts.mean,opts.standard_deviation,x_step)*100 } )
+    
+    curve = svg.selectAll('path.distribution')
+        .data([points])
+    
+    curve.enter().append('svg:path')
         .attr('class','distribution')
-        .attr('d',line(points))
+    
+    curve.attr('d',line)
+    
+    curve.on
+  
+  drawDistributionLine()
   
   values_to_ids = (d) -> d.key
   values_to_frequencies = (d) -> d.values
   iteration_to_id = (d) -> +d.id
   
-  @clear = () ->
+  # Removes histogram points from the chart
+  @clear = () ->    
     point_group.selectAll("g.value").remove()
   
+  # Updates the histogram points on the chart
   @update = (data) ->
         
     # Turn the data into buckets    

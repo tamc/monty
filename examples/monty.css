@@ -1,6 +1,13 @@
 body {
   font: 10px sans-serif;
 }
+g.main {
+}
+
+rect.click {
+  fill: #fff;
+  stroke: null;
+}
 
 path.dot {
   fill: white;

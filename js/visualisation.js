@@ -1,4 +1,4 @@
-var charts, clear, cumulativeNormal, erf, histogram, iterations, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
+var charts, clear, cumulativeNormal, erf, histogram, inverse_probability_in_mean_bin, iterations, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 normalZ = function(x, mean, standard_deviation) {
   var a;
@@ -37,8 +37,26 @@ cumulativeNormal = function(x, mean, standard_deviation) {
 probability_in_bin = function(bin, mean, standard_deviation, bin_width) {
   return cumulativeNormal(bin + (bin_width / 2), mean, standard_deviation) - cumulativeNormal(bin - (bin_width / 2), mean, standard_deviation);
 };
+inverse_probability_in_mean_bin = function(probability, mean, bin_width, guess_step, standard_deviation_guess) {
+  var error;
+  if (guess_step == null) {
+    guess_step = bin_width;
+  }
+  if (standard_deviation_guess == null) {
+    standard_deviation_guess = 0.0;
+  }
+  while (probability_in_bin(mean, mean, standard_deviation_guess, bin_width) > probability) {
+    standard_deviation_guess = standard_deviation_guess + guess_step;
+  }
+  error = probability - probability_in_bin(mean, mean, standard_deviation_guess, bin_width);
+  if (error > 0.001) {
+    return inverse_probability_in_mean_bin(probability, mean, bin_width, guess_step / 10, standard_deviation_guess - guess_step);
+  } else {
+    return standard_deviation_guess;
+  }
+};
 histogram = function(opts) {
-  var block_height, block_width, iteration_to_id, key, line, nesting_operator, point_group, points, stickySelected, svg, tag, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
+  var block_height, block_width, click_rect, distribution_move, drawDistributionLine, iteration_to_id, key, nesting_operator, point_group, stickySelected, svg, tag, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
   if (opts == null) {
     opts = {};
   }
@@ -62,7 +80,8 @@ histogram = function(opts) {
   if (opts.title != null) {
     tag.append("h2").text(opts.title);
   }
-  svg = tag.append("svg:svg").attr("width", opts.width + opts.padding * 2).attr("height", opts.height + opts.padding * 2).append("svg:g").attr("transform", "translate(" + opts.padding + "," + opts.padding + ")");
+  svg = tag.append("svg:svg").attr("width", opts.width + opts.padding * 2).attr("height", opts.height + opts.padding * 2).append("svg:g").attr("class", "main").attr("transform", "translate(" + opts.padding + "," + opts.padding + ")");
+  click_rect = svg.append("svg:rect").attr("class", "click").attr("x", 0).attr("y", 0).attr("width", opts.width).attr("height", opts.height);
   xrule = svg.selectAll("g.x").data(x.ticks(opts.x_ticks)).enter().append("svg:g").attr("class", "x");
   xrule.append("svg:line").attr("x1", x).attr("x2", x).attr("y1", 0).attr("y2", opts.height);
   xrule.append("svg:text").attr("x", x).attr("y", opts.height + 3).attr("dy", ".71em").attr("text-anchor", "middle").text(function(d) {
@@ -81,29 +100,36 @@ histogram = function(opts) {
   }
   point_group = svg.append("svg:g");
   stickySelected = false;
-  point_group.on('mousedown', function(d) {
-    console.log("mousedown");
-    d3.selectAll("rect.stickySelected").classed('stickySelected', false);
-    return stickySelected = true;
-  });
-  point_group.on('mouseup', function(d) {
-    console.log("mouseup");
-    return stickySelected = false;
-  });
-  if ((opts.mean != null) && (opts.standard_deviation != null)) {
+  distribution_move = function(d) {
+    var m;
+    m = d3.svg.mouse(svg.node());
+    opts.mean = x.invert(m[0]);
+    opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1]) / 100, opts.mean, x_step);
+    return drawDistributionLine();
+  };
+  click_rect.on('click', distribution_move);
+  drawDistributionLine = function() {
+    var curve, line, points;
+    if (!((opts.mean != null) && (opts.standard_deviation != null))) {
+      return;
+    }
+    line = d3.svg.line().x(function(d) {
+      return x(d.x);
+    }).y(function(d) {
+      return y(d.y);
+    });
     points = x.ticks(100).map(function(d) {
       return {
         x: d,
         y: probability_in_bin(d, opts.mean, opts.standard_deviation, x_step) * 100
       };
     });
-    line = d3.svg.line().x(function(d) {
-      return x(d.x);
-    }).y(function(d) {
-      return y(d.y);
-    });
-    svg.append('svg:path').attr('class', 'distribution').attr('d', line(points));
-  }
+    curve = svg.selectAll('path.distribution').data([points]);
+    curve.enter().append('svg:path').attr('class', 'distribution');
+    curve.attr('d', line);
+    return curve.on;
+  };
+  drawDistributionLine();
   values_to_ids = function(d) {
     return d.key;
   };
