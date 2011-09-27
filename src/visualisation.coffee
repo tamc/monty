@@ -178,8 +178,9 @@ histogram = (@opts = {}) ->
     that.opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1])/100,that.opts.mean, x_step) 
     that.drawDistributionLine()
     d3.event.preventDefault();
-      
-  click_rect.on('click', distribution_move )
+  
+  @allow_distribution_to_be_altered = () ->    
+    click_rect.on('click', distribution_move )
     
   # Draws a distribution line
   @drawDistributionLine = () ->
@@ -379,7 +380,7 @@ histogram.defaults =
   x_min:    0
   x_max:    300
   y_min:    0
-  y_max:    10
+  y_max:    20
   x_ticks:  10
   y_ticks:  10
   property: (d) -> d
@@ -452,7 +453,8 @@ setup = () ->
       chart.opts.mean = values.mean
       chart.opts.standard_deviation = values.sd
       chart.drawDistributionLine()
-    
+      chart.allow_distribution_to_be_altered()
+      
     # Set up the controls
     d3.select("#oneRun").on('click',() -> start(1); return false)
     d3.select("#tenRuns").on('click',() -> start(10); return false)

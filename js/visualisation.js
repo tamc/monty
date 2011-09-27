@@ -118,7 +118,9 @@ histogram = function(opts) {
     that.drawDistributionLine();
     return d3.event.preventDefault();
   };
-  click_rect.on('click', distribution_move);
+  this.allow_distribution_to_be_altered = function() {
+    return click_rect.on('click', distribution_move);
+  };
   this.drawDistributionLine = function() {
     var curve, line, points;
     if (!((that.opts.mean != null) && (that.opts.standard_deviation != null))) {
@@ -263,7 +265,7 @@ histogram.defaults = {
   x_min: 0,
   x_max: 300,
   y_min: 0,
-  y_max: 10,
+  y_max: 20,
   x_ticks: 10,
   y_ticks: 10,
   property: function(d) {
@@ -492,6 +494,7 @@ setup = function() {
     chart.opts.mean = values.mean;
     chart.opts.standard_deviation = values.sd;
     chart.drawDistributionLine();
+    chart.allow_distribution_to_be_altered();
   }
   d3.select("#oneRun").on('click', function() {
     start(1);
