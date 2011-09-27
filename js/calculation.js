@@ -1,4 +1,5 @@
-var environment, investors, iteration, randomNormalValue, randomValue, technology;
+var iteration, randomNormalValue, randomValue;
+var __hasProp = Object.prototype.hasOwnProperty;
 randomNormalValue = function() {
   var r, s, x1, x2, y1, y2;
   while (r >= 1.0 || r === void 0) {
@@ -14,48 +15,40 @@ randomNormalValue = function() {
 randomValue = function(mean, standard_deviation) {
   return (randomNormalValue() * standard_deviation) + mean;
 };
-technology = function() {
-  this.capital_cost = randomValue(100, 30);
-  this.operating_cost = randomValue(100, 50);
-  this.fuel_cost = randomValue(100, 50);
-  return this.output = randomValue(1, 0.3);
-};
-investors = function() {
-  this.hurdle_rate = randomValue(0.1, 0.03);
-  this.loan_period = 10;
-  return this.quantity = randomValue(100, 30);
-};
-environment = function() {
-  this.subsidy = 10;
-  return this.price = randomValue(200, 60);
-};
-iteration = function(id, technology, investors, environment) {
+iteration = function(id, distributions) {
+  var key, value;
   this.id = id;
-  this.technology = technology;
-  this.investors = investors;
-  this.environment = environment;
-  this.isTechnologyBuilt = function() {
-    return this.annualIncome() > this.annualCost();
-  };
-  this.annualIncome = function() {
-    return this.technology.output * (this.environment.price + this.environment.subsidy);
-  };
-  this.annualCost = function() {
-    return this.technology.fuel_cost + this.technology.operating_cost + this.annualCapitalCost();
-  };
-  this.annualCapitalCost = function() {
-    return this.technology.capital_cost * this.investors.hurdle_rate * Math.pow(1 + this.investors.hurdle_rate, this.investors.loan_period) / (Math.pow(1 + this.investors.hurdle_rate, this.investors.loan_period) - 1);
-  };
-  this.deployment = this.isTechnologyBuilt() * this.investors.quantity;
-  this.energyDelivered = this.deployment * this.technology.output;
-  this.publicSpend = this.deployment * this.environment.subsidy;
+  this.distributions = distributions;
+  for (key in distributions) {
+    if (!__hasProp.call(distributions, key)) continue;
+    value = distributions[key];
+    this[key] = randomValue(value.mean, value.sd);
+  }
+  this.hurdle_rate = this.hurdle_rate / 100;
+  this.availability = this.availability / 100;
+  this.efficiency = this.efficiency / 100;
+  this.annualCapitalCost = this.capital_cost * this.hurdle_rate * Math.pow(1 + this.hurdle_rate, this.economic_life) / (Math.pow(1 + this.hurdle_rate, this.loan_period) - 1);
+  this.annualCost = (this.fuel_cost / this.efficiency) + this.operating_cost + this.annualCapitalCost;
+  this.annualIncome = this.availability * (this.price + this.subsidy);
+  this.profit = this.annualIncome - this.annualCost;
+  if (this.profit > 0) {
+    this.deployment = this.capital_available / this.capital_cost;
+    this.energyDelivered = this.deployment * this.availability;
+    this.publicSpend = this.energyDelivered * this.subsidy;
+  } else {
+    this.profit = 0;
+    this.deployment = 0;
+    this.energyDelivered = 0;
+    this.publicSpend = 0;
+  }
   return this;
 };
 this.onmessage = function(event) {
-  var i, starting_id, _ref;
+  var distributions, i, starting_id, _ref;
   starting_id = event.data.starting_id;
+  distributions = event.data.distributions;
   for (i = 1, _ref = event.data.number_of_iterations; 1 <= _ref ? i <= _ref : i >= _ref; 1 <= _ref ? i++ : i--) {
-    this.postMessage(new iteration(i + starting_id, new technology, new investors, new environment));
+    this.postMessage(new iteration(i + starting_id, distributions));
     false;
   }
   return this.close;

@@ -1,4 +1,4 @@
-var charts, clear, cumulativeNormal, erf, histogram, inverse_probability_in_mean_bin, iterations, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
+var charts, clear, cumulativeNormal, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 normalZ = function(x, mean, standard_deviation) {
   var a;
@@ -56,47 +56,46 @@ inverse_probability_in_mean_bin = function(probability, mean, bin_width, guess_s
   }
 };
 histogram = function(opts) {
-  var block_height, block_width, click_rect, distribution_move, drawDistributionLine, empty, iteration_to_id, key, nesting_operator, point_group, stickySelected, svg, tag, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
-  if (opts == null) {
-    opts = {};
-  }
+  var block_height, block_width, click_rect, distribution_move, drawDistributionLine, empty, iteration_to_id, key, nesting_operator, point_group, stickySelected, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
+  this.opts = opts != null ? opts : {};
   _ref = histogram.defaults;
   for (key in _ref) {
     if (!__hasProp.call(_ref, key)) continue;
     value = _ref[key];
-    if (opts[key] == null) {
-      opts[key] = value;
+    if (this.opts[key] == null) {
+      this.opts[key] = value;
     }
   }
-  x = d3.scale.linear().domain([opts.x_min, opts.x_max]).range([0, opts.width]);
-  y = d3.scale.linear().domain([opts.y_min, opts.y_max]).range([opts.height, 0]);
-  x_step = (x.domain()[1] - x.domain()[0]) / opts.bins;
+  that = this;
+  x = d3.scale.linear().domain([this.opts.x_min, this.opts.x_max]).range([0, this.opts.width]);
+  y = d3.scale.linear().domain([this.opts.y_min, this.opts.y_max]).range([this.opts.height, 0]);
+  x_step = (x.domain()[1] - x.domain()[0]) / this.opts.bins;
   nesting_operator = d3.nest().key(function(d) {
-    return Math.round(opts.property(d) / x_step) * x_step;
+    return Math.round(that.opts.property(d) / x_step) * x_step;
   });
   block_width = x(x_step) - x(0);
-  block_height = opts.height / ((opts.y_max / 100) * 500);
-  tag = d3.select(opts.tag);
-  if (opts.title != null) {
-    tag.append("h2").text(opts.title);
+  block_height = this.opts.height / ((this.opts.y_max / 100) * 500);
+  tag = d3.select(this.opts.tag);
+  if (this.opts.title != null) {
+    tag.append("h2").text(this.opts.title);
   }
-  svg = tag.append("svg:svg").attr("width", opts.width + opts.padding * 2).attr("height", opts.height + opts.padding * 2).append("svg:g").attr("class", "main").attr("transform", "translate(" + opts.padding + "," + opts.padding + ")");
-  click_rect = svg.append("svg:rect").attr("class", "click").attr("x", 0).attr("y", 0).attr("width", opts.width).attr("height", opts.height);
-  xrule = svg.selectAll("g.x").data(x.ticks(opts.x_ticks)).enter().append("svg:g").attr("class", "x");
-  xrule.append("svg:line").attr("x1", x).attr("x2", x).attr("y1", 0).attr("y2", opts.height);
-  xrule.append("svg:text").attr("x", x).attr("y", opts.height + 3).attr("dy", ".71em").attr("text-anchor", "middle").text(function(d) {
-    return x.tickFormat(opts.x_ticks)(d) + opts.x_axis_suffix;
+  svg = tag.append("svg:svg").attr("width", this.opts.width + this.opts.padding * 2).attr("height", this.opts.height + this.opts.padding * 2).append("svg:g").attr("class", "main").attr("transform", "translate(" + this.opts.padding + "," + this.opts.padding + ")");
+  click_rect = svg.append("svg:rect").attr("class", "click").attr("x", 0).attr("y", 0).attr("width", this.opts.width).attr("height", this.opts.height);
+  xrule = svg.selectAll("g.x").data(x.ticks(this.opts.x_ticks)).enter().append("svg:g").attr("class", "x");
+  xrule.append("svg:line").attr("x1", x).attr("x2", x).attr("y1", 0).attr("y2", this.opts.height);
+  xrule.append("svg:text").attr("x", x).attr("y", this.opts.height + 3).attr("dy", ".71em").attr("text-anchor", "middle").text(function(d) {
+    return x.tickFormat(that.opts.x_ticks)(d) + that.opts.x_axis_suffix;
   });
-  if (opts.x_axis_title != null) {
-    svg.append("svg:text").attr("x", opts.width / 2).attr("y", opts.height + 18).attr("dy", ".71em").attr("text-anchor", "middle").text(opts.x_axis_title);
+  if (this.opts.x_axis_title != null) {
+    svg.append("svg:text").attr("x", this.opts.width / 2).attr("y", this.opts.height + 18).attr("dy", ".71em").attr("text-anchor", "middle").text(this.opts.x_axis_title);
   }
-  yrule = svg.selectAll("g.y").data(y.ticks(opts.y_ticks)).enter().append("svg:g").attr("class", "y");
-  yrule.append("svg:line").attr("x1", 0).attr("x2", opts.width).attr("y1", y).attr("y2", y);
+  yrule = svg.selectAll("g.y").data(y.ticks(this.opts.y_ticks)).enter().append("svg:g").attr("class", "y");
+  yrule.append("svg:line").attr("x1", 0).attr("x2", this.opts.width).attr("y1", y).attr("y2", y);
   yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(function(d) {
-    return y.tickFormat(opts.y_ticks)(d) + opts.y_axis_suffix;
+    return y.tickFormat(that.opts.y_ticks)(d) + that.opts.y_axis_suffix;
   });
-  if (opts.y_axis_title != null) {
-    svg.append("svg:text").attr("x", -opts.height / 2).attr("y", opts.width / 2).attr("dy", ".31em").attr("text-anchor", "middle").attr("transform", "rotate(-90)translate(0,-" + ((opts.width / 2) + 30) + ")").text(opts.y_axis_title);
+  if (this.opts.y_axis_title != null) {
+    svg.append("svg:text").attr("x", -this.opts.height / 2).attr("y", this.opts.width / 2).attr("dy", ".31em").attr("text-anchor", "middle").attr("transform", "rotate(-90)translate(0,-" + ((this.opts.width / 2) + 30) + ")").text(this.opts.y_axis_title);
   }
   point_group = svg.append("svg:g");
   stickySelected = false;
@@ -114,15 +113,15 @@ histogram = function(opts) {
       return;
     }
     m = d3.svg.mouse(svg.node());
-    opts.mean = x.invert(m[0]);
-    opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1]) / 100, opts.mean, x_step);
+    that.opts.mean = x.invert(m[0]);
+    that.opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1]) / 100, that.opts.mean, x_step);
     drawDistributionLine();
     return d3.event.preventDefault();
   };
   click_rect.on('click', distribution_move);
   drawDistributionLine = function() {
     var curve, line, points;
-    if (!((opts.mean != null) && (opts.standard_deviation != null))) {
+    if (!((that.opts.mean != null) && (that.opts.standard_deviation != null))) {
       return;
     }
     line = d3.svg.line().x(function(d) {
@@ -133,7 +132,7 @@ histogram = function(opts) {
     points = x.ticks(100).map(function(d) {
       return {
         x: d,
-        y: probability_in_bin(d, opts.mean, opts.standard_deviation, x_step) * 100
+        y: probability_in_bin(d, that.opts.mean, that.opts.standard_deviation, x_step) * 100
       };
     });
     curve = svg.selectAll('path.distribution').data([points]);
@@ -168,9 +167,8 @@ histogram = function(opts) {
     frequencies.enter().append("svg:rect").attr("class", function(d) {
       return "block block" + d.id;
     }).attr("y", function(d, i) {
-      return opts.height - ((i + 1) * block_height);
+      return that.opts.height - ((i + 1) * block_height);
     }).attr("width", block_width).attr("height", block_height).on('mouseover', function(d) {
-      console.log("over");
       return d3.selectAll(".block" + d.id).classed("selected", true).style("fill", "yellow");
     }).on('mouseout', function(d) {
       if (stickySelected === true) {
@@ -204,50 +202,47 @@ histogram.defaults = {
   y_axis_title: "Probability"
 };
 scatterplot = function(opts) {
-  var block_height, block_width, iteration_to_id, key, point_group, stickySelected, svg, tag, value, x, xrule, y, yrule, _ref;
-  if (opts == null) {
-    opts = {};
-  }
+  var block_height, block_width, iteration_to_id, key, point_group, stickySelected, svg, tag, that, value, x, xrule, y, yrule, _ref;
+  this.opts = opts != null ? opts : {};
   _ref = scatterplot.defaults;
   for (key in _ref) {
     if (!__hasProp.call(_ref, key)) continue;
     value = _ref[key];
-    if (opts[key] == null) {
-      opts[key] = value;
+    if (this.opts[key] == null) {
+      this.opts[key] = value;
     }
   }
-  x = d3.scale.linear().domain([opts.x_min, opts.x_max]).range([0, opts.width]);
-  y = d3.scale.linear().domain([opts.y_min, opts.y_max]).range([opts.height, 0]);
-  tag = d3.select(opts.tag);
-  if (opts.title != null) {
-    tag.append("h2").text(opts.title);
+  that = this;
+  x = d3.scale.linear().domain([this.opts.x_min, this.opts.x_max]).range([0, this.opts.width]);
+  y = d3.scale.linear().domain([this.opts.y_min, this.opts.y_max]).range([this.opts.height, 0]);
+  tag = d3.select(this.opts.tag);
+  if (this.opts.title != null) {
+    tag.append("h2").text(this.opts.title);
   }
-  svg = tag.append("svg:svg").attr("width", opts.width + opts.padding * 2).attr("height", opts.height + opts.padding * 2).append("svg:g").attr("transform", "translate(" + opts.padding + "," + opts.padding + ")");
-  xrule = svg.selectAll("g.x").data(x.ticks(opts.x_ticks)).enter().append("svg:g").attr("class", "x");
-  xrule.append("svg:line").attr("x1", x).attr("x2", x).attr("y1", 0).attr("y2", opts.height);
-  xrule.append("svg:text").attr("x", x).attr("y", opts.height + 3).attr("dy", ".71em").attr("text-anchor", "middle").text(function(d) {
-    return x.tickFormat(opts.x_ticks)(d) + opts.x_axis_suffix;
+  svg = tag.append("svg:svg").attr("width", this.opts.width + this.opts.padding * 2).attr("height", this.opts.height + this.opts.padding * 2).append("svg:g").attr("transform", "translate(" + this.opts.padding + "," + this.opts.padding + ")");
+  xrule = svg.selectAll("g.x").data(x.ticks(this.opts.x_ticks)).enter().append("svg:g").attr("class", "x");
+  xrule.append("svg:line").attr("x1", x).attr("x2", x).attr("y1", 0).attr("y2", this.opts.height);
+  xrule.append("svg:text").attr("x", x).attr("y", this.opts.height + 3).attr("dy", ".71em").attr("text-anchor", "middle").text(function(d) {
+    return x.tickFormat(that.opts.x_ticks)(d) + that.opts.x_axis_suffix;
   });
-  if (opts.x_axis_title != null) {
-    svg.append("svg:text").attr("x", opts.width / 2).attr("y", opts.height + 18).attr("dy", ".71em").attr("text-anchor", "middle").text(opts.x_axis_title);
+  if (this.opts.x_axis_title != null) {
+    svg.append("svg:text").attr("x", this.opts.width / 2).attr("y", this.opts.height + 18).attr("dy", ".71em").attr("text-anchor", "middle").text(this.opts.x_axis_title);
   }
-  yrule = svg.selectAll("g.y").data(y.ticks(opts.y_ticks)).enter().append("svg:g").attr("class", "y");
-  yrule.append("svg:line").attr("x1", 0).attr("x2", opts.width).attr("y1", y).attr("y2", y);
+  yrule = svg.selectAll("g.y").data(y.ticks(this.opts.y_ticks)).enter().append("svg:g").attr("class", "y");
+  yrule.append("svg:line").attr("x1", 0).attr("x2", this.opts.width).attr("y1", y).attr("y2", y);
   yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(function(d) {
-    return y.tickFormat(opts.y_ticks)(d) + opts.y_axis_suffix;
+    return y.tickFormat(that.opts.y_ticks)(d) + that.opts.y_axis_suffix;
   });
-  if (opts.y_axis_title != null) {
-    svg.append("svg:text").attr("x", -opts.height / 2).attr("y", opts.width / 2).attr("dy", ".31em").attr("text-anchor", "middle").attr("transform", "rotate(-90)translate(0,-" + ((opts.width / 2) + 30) + ")").text(opts.y_axis_title);
+  if (this.opts.y_axis_title != null) {
+    svg.append("svg:text").attr("x", -this.opts.height / 2).attr("y", this.opts.width / 2).attr("dy", ".31em").attr("text-anchor", "middle").attr("transform", "rotate(-90)translate(0,-" + ((this.opts.width / 2) + 30) + ")").text(this.opts.y_axis_title);
   }
   point_group = svg.append("svg:g");
   stickySelected = false;
   point_group.on('mousedown', function(d) {
-    console.log("mousedown");
     d3.selectAll("rect.stickySelected").classed('stickySelected', false);
     return stickySelected = true;
   });
   point_group.on('mouseup', function(d) {
-    console.log("mouseup");
     return stickySelected = false;
   });
   iteration_to_id = function(d) {
@@ -264,9 +259,9 @@ scatterplot = function(opts) {
     frequencies.enter().append("svg:rect").attr("class", function(d) {
       return "block block" + d.id;
     }).attr("x", function(d) {
-      return x(opts.x_property(d));
+      return x(that.opts.x_property(d));
     }).attr("y", function(d) {
-      return y(opts.y_property(d)) - block_height;
+      return y(that.opts.y_property(d)) - block_height;
     }).attr("width", block_width).attr("height", block_height).on('mouseover', function(d) {
       d3.selectAll("rect.selected").classed('selected', false);
       if (stickySelected === true) {
@@ -304,112 +299,122 @@ scatterplot.defaults = {
   y_axis_suffix: "",
   y_axis_title: null
 };
-charts = [];
+charts = {};
 iterations = [];
 running = false;
 worker = null;
 setup = function() {
-  charts.push(new histogram({
+  charts['capital_cost'] = new histogram({
     tag: '#capital',
-    x_axis_title: "Capital cost £/kW",
+    x_axis_title: "Capital cost (£/kW)",
     mean: 100,
     standard_deviation: 30,
     property: function(d) {
-      return d.technology.capital_cost;
+      return d.capital_cost;
     }
-  }));
-  charts.push(new histogram({
+  });
+  charts['operating_cost'] = new histogram({
     tag: "#operating",
-    x_axis_title: "Operating cost £/MWh",
+    x_axis_title: "Operating cost (£/MWh)",
     mean: 100,
     standard_deviation: 50,
     property: function(d) {
-      return d.technology.operating_cost;
+      return d.operating_cost;
     }
-  }));
-  charts.push(new histogram({
+  });
+  charts['fuel_cost'] = new histogram({
     tag: "#fuel",
-    x_axis_title: "Fuel cost £/MWh",
+    x_axis_title: "Fuel cost (£/MWh)",
     mean: 100,
     standard_deviation: 50,
     property: function(d) {
-      return d.technology.fuel_cost;
+      return d.fuel_cost;
     }
-  }));
-  charts.push(new histogram({
+  });
+  charts['efficiency'] = new histogram({
     tag: "#efficiency",
     x_axis_title: "Efficiency",
     x_axis_suffix: "%",
-    mean: 1,
-    standard_deviation: 0.3,
-    property: (function(d) {
-      return d.technology.efficiency;
-    }),
-    x_max: 2
-  }));
-  charts.push(new histogram({
+    x_max: 100,
+    mean: 40,
+    standard_deviation: 5,
+    property: function(d) {
+      return d.efficiency;
+    }
+  });
+  charts['availability'] = new histogram({
     tag: "#availability",
-    x_axis_title: "Availability",
+    x_axis_title: "Availability or capacity factor (% of hours operating)",
     x_axis_suffix: "%",
-    mean: 1,
-    standard_deviation: 0.3,
-    property: (function(d) {
-      return d.technology.availability;
-    }),
-    x_max: 2
-  }));
-  charts.push(new histogram({
+    x_max: 100,
+    mean: 80,
+    standard_deviation: 3,
+    property: function(d) {
+      return d.availability;
+    }
+  });
+  charts['economic_life'] = new histogram({
+    tag: "#life",
+    x_axis_title: "Economic life (years)",
+    x_max: 50,
+    mean: 30,
+    standard_deviation: 5,
+    property: function(d) {
+      return d.economic_life;
+    }
+  });
+  charts['hurdle_rate'] = new histogram({
     tag: "#hurdle",
-    x_axis_title: "Investor's hurdle rate",
+    x_axis_title: "Investor's hurdle rate (apr)",
     x_axis_suffix: "%",
+    x_max: 20,
     mean: 10,
     standard_deviation: 3,
-    property: (function(d) {
-      return d.investors.hurdle_rate * 100;
-    }),
-    x_max: 20
-  }));
-  charts.push(new histogram({
+    property: function(d) {
+      return d.hurdle_rate;
+    }
+  });
+  charts['capital_available'] = new histogram({
     tag: "#quantity",
     x_axis_title: "Investor's capital available £",
     mean: 100,
     standard_deviation: 30,
     property: function(d) {
-      return d.investors.quantity;
+      return d.quantity;
     }
-  }));
-  charts.push(new histogram({
+  });
+  charts['price'] = new histogram({
     tag: "#price",
     x_axis_title: "Price of electricity £/MWh",
     mean: 200,
     standard_deviation: 60,
     property: function(d) {
-      return d.environment.price;
+      return d.price;
     }
-  }));
-  charts.push(new histogram({
+  });
+  charts['deployment'] = new histogram({
     tag: "#deployment",
     x_axis_title: "Quantity deployed MW",
     property: function(d) {
       return d.deployment;
     }
-  }));
-  charts.push(new histogram({
+  });
+  charts['energy_delivered'] = new histogram({
     tag: "#energyDelivered",
     x_axis_title: "Energy delivered MWh",
     property: function(d) {
       return d.energyDelivered;
     }
-  }));
-  charts.push(new histogram({
+  });
+  charts['public_spend'] = new histogram({
     tag: "#publicSpend",
     x_axis_title: "Public expenditure £",
     x_max: 2000,
     property: function(d) {
       return d.publicSpend;
     }
-  }));
-  charts.push(new scatterplot({
+  });
+  charts['public_spend_against_energy'] = new scatterplot({
     tag: '#spendEnergyDelivered',
     x_axis_title: "Public expenditure £",
     y_axis_title: "Energy delivered MWh",
@@ -421,8 +426,8 @@ setup = function() {
     y_property: (function(d) {
       return d.energyDelivered;
     })
-  }));
-  charts.push(new scatterplot({
+  });
+  charts['energy_per_public_spend_against_public_spend'] = new scatterplot({
     tag: '#energyPerPoundAgainstPounds',
     x_axis_title: "Public expenditure £",
     y_axis_title: "Energy per pound of public spend MWh/£",
@@ -434,7 +439,7 @@ setup = function() {
     y_property: (function(d) {
       return d.energyDelivered / d.publicSpend;
     })
-  }));
+  });
   d3.select("#oneRun").on('click', function() {
     start(1);
     return false;
@@ -460,6 +465,21 @@ setup = function() {
     return false;
   });
 };
+distributions = function() {
+  var chart, name, parameters;
+  parameters = {};
+  for (name in charts) {
+    if (!__hasProp.call(charts, name)) continue;
+    chart = charts[name];
+    if ((chart.opts.mean != null) && (chart.opts.standard_deviation != null)) {
+      parameters[name] = {
+        mean: chart.opts.mean,
+        sd: chart.opts.standard_deviation
+      };
+    }
+  }
+  return parameters;
+};
 stop = function() {
   if (running !== true) {
     return;
@@ -476,10 +496,11 @@ start = function(number_of_iterations) {
   worker = new Worker('../js/calculation.js');
   running = true;
   worker.onmessage = function(event) {
-    var chart, _i, _len;
+    var chart, name;
     iterations.push(event.data);
-    for (_i = 0, _len = charts.length; _i < _len; _i++) {
-      chart = charts[_i];
+    for (name in charts) {
+      if (!__hasProp.call(charts, name)) continue;
+      chart = charts[name];
       chart.update(iterations);
     }
     return d3.select("#message}").text("" + iterations.length + " runs completed");
@@ -488,17 +509,20 @@ start = function(number_of_iterations) {
     console.log("Calculation error: " + error.message + "\n");
     throw error;
   };
+  console.log(distributions());
   return worker.postMessage({
     starting_id: iterations.length,
-    number_of_iterations: number_of_iterations
+    number_of_iterations: number_of_iterations,
+    distributions: distributions()
   });
 };
 clear = function() {
-  var chart, _i, _len;
+  var chart, name;
   stop();
   iterations = [];
-  for (_i = 0, _len = charts.length; _i < _len; _i++) {
-    chart = charts[_i];
+  for (name in charts) {
+    if (!__hasProp.call(charts, name)) continue;
+    chart = charts[name];
     chart.clear();
   }
   return d3.select("#message}").text("");

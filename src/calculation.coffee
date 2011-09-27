@@ -16,46 +16,40 @@ randomNormalValue = () ->
 randomValue = (mean,standard_deviation) ->
   (randomNormalValue() * standard_deviation) + mean
 
-# The variables
-technology = () ->
-  @capital_cost   = randomValue(100,30)
-  @operating_cost = randomValue(100,50)
-  @fuel_cost      = randomValue(100,50)
-  @output         = randomValue(1,0.3)
-
-investors = () ->
-  @hurdle_rate    = randomValue(0.1,0.03)
-  @loan_period    = 10
-  @quantity       = randomValue(100,30)
-
-environment = () ->
-  @subsidy        = 10
-  @price          = randomValue(200,60)
-
 # The computation
-iteration = (@id,@technology,@investors,@environment) ->
-  @isTechnologyBuilt = () ->
-    @annualIncome() > @annualCost()
+iteration = (@id,@distributions) ->
+  # Expects distribution of the form
+  # { 
+  #   capital_cost: {mean: 100, sd: 10 },
+  #   hurdle_rate: {meain:100, sd: 10}
+  # }
+  for own key, value of distributions
+    @[key] = randomValue(value.mean,value.sd)
   
-  @annualIncome = () ->
-    @technology.output * ( @environment.price + @environment.subsidy )
+  @hurdle_rate = @hurdle_rate / 100 # Turn into percentage
+  @availability = @availability / 100 
+  @efficiency = @efficiency / 100
   
-  @annualCost = () ->
-    @technology.fuel_cost + @technology.operating_cost + @annualCapitalCost()
-    
-  @annualCapitalCost = () ->
-    @technology.capital_cost * @investors.hurdle_rate * Math.pow(1+@investors.hurdle_rate,@investors.loan_period) / ( Math.pow(1+@investors.hurdle_rate,@investors.loan_period) - 1)
-
-  @deployment = @isTechnologyBuilt() * @investors.quantity
-  @energyDelivered = @deployment * @technology.output
-  @publicSpend = @deployment * @environment.subsidy
-  
+  @annualCapitalCost = @capital_cost * @hurdle_rate * Math.pow(1+@hurdle_rate,@economic_life) / ( Math.pow(1+@hurdle_rate,@loan_period) - 1)
+  @annualCost = (@fuel_cost / @efficiency) + @operating_cost + @annualCapitalCost
+  @annualIncome = @availability * ( @price + @subsidy )
+  @profit = @annualIncome - @annualCost
+  if @profit > 0
+    @deployment = (@capital_available / @capital_cost)
+    @energyDelivered = @deployment *  @availability
+    @publicSpend = @energyDelivered * @subsidy
+  else
+    @profit = 0
+    @deployment = 0
+    @energyDelivered = 0
+    @publicSpend = 0
     
   return this
 
 @onmessage = (event) ->
   starting_id = event.data.starting_id
+  distributions = event.data.distributions
   for i in [1..event.data.number_of_iterations]
-    @postMessage(new iteration(i+starting_id,new technology, new investors, new environment))
+    @postMessage(new iteration(i+starting_id,distributions))
     false
   @close
