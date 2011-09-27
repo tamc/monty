@@ -73,7 +73,7 @@ histogram = (@opts = {}) ->
   x_step = (x.domain()[1] - x.domain()[0])/@opts.bins
   nesting_operator = d3.nest().key((d) -> Math.round(that.opts.property(d) / x_step) * x_step )
   block_width = x(x_step) - x(0)
-  block_height = @opts.height / ((@opts.y_max / 100)*500)
+  block_height = (@opts.height / @opts.y_max) / 5
   
   # Start the drawing by setting up the surround
   tag = d3.select(@opts.tag)
@@ -176,13 +176,13 @@ histogram = (@opts = {}) ->
     # Translate those coordinates into mean and probability
     that.opts.mean = x.invert(m[0])
     that.opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1])/100,that.opts.mean, x_step) 
-    drawDistributionLine()
+    that.drawDistributionLine()
     d3.event.preventDefault();
       
   click_rect.on('click', distribution_move )
     
   # Draws a distribution line
-  drawDistributionLine = () ->
+  @drawDistributionLine = () ->
     return unless that.opts.mean? && that.opts.standard_deviation?
 
     # Point to line mapping
@@ -201,7 +201,7 @@ histogram = (@opts = {}) ->
     
     curve.on
   
-  drawDistributionLine()
+  @drawDistributionLine()
   
   values_to_ids = (d) -> d.key
   values_to_frequencies = (d) -> d.values
@@ -253,24 +253,7 @@ histogram = (@opts = {}) ->
   
   this
 
-histogram.defaults =
-  tag:      "body"
-  width:    250
-  height:   250
-  padding:  35
-  x_min:    0
-  x_max:    300
-  y_min:    0
-  y_max:    10
-  x_ticks:  10
-  y_ticks:  10
-  property: (d) -> d
-  bins:     50
-  title:    null
-  x_axis_suffix: ""
-  x_axis_title: null 
-  y_axis_suffix: "%"
-  y_axis_title: "Probability"
+
 
 scatterplot = (@opts = {}) ->
   # Set default options
@@ -388,6 +371,25 @@ scatterplot = (@opts = {}) ->
 
   this
 
+histogram.defaults =
+  tag:      "body"
+  width:    250
+  height:   250
+  padding:  35
+  x_min:    0
+  x_max:    300
+  y_min:    0
+  y_max:    10
+  x_ticks:  10
+  y_ticks:  10
+  property: (d) -> d
+  bins:     50
+  title:    null
+  x_axis_suffix: ""
+  x_axis_title: null 
+  y_axis_suffix: "%"
+  y_axis_title: "Probability"
+
 scatterplot.defaults =
   tag:      "body"
   width:    250
@@ -407,6 +409,19 @@ scatterplot.defaults =
   y_axis_suffix: ""
   y_axis_title: null
 
+defaults = { 
+  "subsidy": {"mean":100,"sd":0}
+  "capital_cost":{"mean":3700,"sd":(3700-2900)},
+  "operating_cost":{"mean":78,"sd":(78-64)},
+  "fuel_cost":{"mean":0,"sd":0},
+  "efficiency":{"mean":95,"sd":2},
+  "availability":{"mean":86,"sd":4},
+  "economic_life":{"mean":60,"sd":10},
+  "hurdle_rate":{"mean":10,"sd":3},
+  "capital_available":{"mean":5,"sd":1},
+  "price":{"mean":50,"sd":10}
+}
+
 charts = {}
 iterations = []
 running = false
@@ -414,21 +429,30 @@ worker = null
 
 setup = () ->
     # Create the charts
-    charts['capital_cost'] = new histogram(tag:'#capital', x_axis_title:"Capital cost (£/kW)", mean:100 ,standard_deviation:30,property: (d) -> d.capital_cost)
-    charts['operating_cost'] = new histogram(tag:"#operating", x_axis_title:"Operating cost (£/MWh)", mean:100, standard_deviation:50, property: (d) -> d.operating_cost)
-    charts['fuel_cost'] = new histogram(tag:"#fuel",x_axis_title:"Fuel cost (£/MWh)",mean:100 ,standard_deviation:50, property: (d) -> d.fuel_cost)
-    charts['efficiency'] = new histogram(tag:"#efficiency", x_axis_title:"Efficiency", x_axis_suffix: "%", x_max: 100, mean:40, standard_deviation:5, property:(d) -> d.efficiency)
-    charts['availability'] = new histogram(tag:"#availability", x_axis_title:"Availability or capacity factor (% of hours operating)", x_axis_suffix:"%", x_max: 100, mean:80, standard_deviation:3 ,property:(d) -> d.availability)
-    charts['economic_life'] = new histogram(tag:"#life", x_axis_title:"Economic life (years)", x_max: 50, mean:30, standard_deviation:5, property:(d) -> d.economic_life)
-    charts['hurdle_rate'] = new histogram(tag:"#hurdle", x_axis_title:"Investor's hurdle rate (apr)", x_axis_suffix: "%", x_max: 20, mean:10, standard_deviation:3, property:(d) -> d.hurdle_rate)
-    charts['capital_available'] = new histogram(tag: "#quantity", x_axis_title:"Investor's capital available £", mean:100, standard_deviation:30, property:(d) -> d.quantity)
-    charts['price'] = new histogram(tag: "#price", x_axis_title:"Price of electricity £/MWh", mean:200, standard_deviation:60, property:(d) -> d.price)   
-    charts['deployment'] = new histogram(tag: "#deployment", x_axis_title: "Quantity deployed MW", property: (d) -> d.deployment)
-    charts['energy_delivered'] = new histogram(tag: "#energyDelivered", x_axis_title: "Energy delivered MWh", property: (d) -> d.energyDelivered)
-    charts['public_spend'] = new histogram(tag: "#publicSpend", x_axis_title: "Public expenditure £", x_max: 2000, property: (d) -> d.publicSpend)
-    charts['public_spend_against_energy'] = new scatterplot(tag: '#spendEnergyDelivered', x_axis_title: "Public expenditure £", y_axis_title: "Energy delivered MWh", x_max: 2000, y_max: 300, x_property: ((d) -> d.publicSpend), y_property: ((d) -> d.energyDelivered))
-    charts['energy_per_public_spend_against_public_spend'] = new scatterplot(tag:'#energyPerPoundAgainstPounds', x_axis_title:"Public expenditure £", y_axis_title:"Energy per pound of public spend MWh/£", x_max:2000, y_max:0.2, x_property:((d) -> d.publicSpend), y_property:((d) -> (d.energyDelivered / d.publicSpend)))
-  
+    charts['subsidy'] = new histogram(tag:'#subsidy', x_axis_title:"Subsidy (£/MWh)", x_max: 400, property: (d) -> d.subsidy)
+    charts['capital_cost'] = new histogram(tag:'#capital', x_axis_title:"Capital cost (£/kW)", x_max: 7500, property: (d) -> d.capital_cost)
+    charts['operating_cost'] = new histogram(tag:"#operating", x_axis_title:"Operating cost (£/kW/yr)", property: (d) -> d.operating_cost)
+    charts['fuel_cost'] = new histogram(tag:"#fuel",x_axis_title:"Fuel cost (£/MWh)", property: (d) -> d.fuel_cost)
+    charts['efficiency'] = new histogram(tag:"#efficiency", x_axis_title:"Efficiency", x_axis_suffix: "%", x_max: 100, property:(d) -> d.efficiency)
+    charts['availability'] = new histogram(tag:"#availability", x_axis_title:"Availability or capacity factor (% of hours operating)", x_axis_suffix:"%", x_max: 100,property:(d) -> d.availability)
+    charts['economic_life'] = new histogram(tag:"#life", x_axis_title:"Economic life (years)", x_max: 100, property:(d) -> d.economic_life)
+    charts['hurdle_rate'] = new histogram(tag:"#hurdle", x_axis_title:"Investor's hurdle rate (apr)", x_axis_suffix: "%", x_max: 20, property:(d) -> d.hurdle_rate)
+    charts['capital_available'] = new histogram(tag: "#quantity", x_axis_title:"Investor's capital available £bn", x_max: 10, property:(d) -> d.capital_available)
+    charts['cost_per_MWh'] = new histogram(tag: "#annualcost", x_axis_title:"Cost £/MWh", x_max: 300, property:(d) -> d.cost_per_MWh)
+    charts['price'] = new histogram(tag: "#price", x_axis_title:"Price of electricity £/MWh", property:(d) -> d.price)   
+    charts['deployment'] = new histogram(tag: "#deployment", x_axis_title: "Quantity deployed MW", x_max: 3000, property: (d) -> d.deployment)
+    charts['energy_delivered'] = new histogram(tag: "#energyDelivered", x_axis_title: "Energy delivered TWh", x_max:50, property: (d) -> d.energyDelivered)
+    charts['public_spend'] = new histogram(tag: "#publicSpend", x_axis_title: "Public expenditure £bn", x_max: 5, property: (d) -> d.publicSpend)
+    charts['public_spend_against_energy'] = new scatterplot(tag: '#spendEnergyDelivered', x_axis_title: "Public expenditure £bn", y_axis_title: "Energy delivered TWh", x_max: 5, y_max: 50, x_property: ((d) -> d.publicSpend), y_property: ((d) -> d.energyDelivered))
+    charts['energy_per_public_spend_against_public_spend'] = new scatterplot(tag:'#energyPerPoundAgainstPounds', x_axis_title:"Public expenditure £", y_axis_title:"Energy per pound of public spend MWh/£", x_max:5, y_max: 20, x_property:((d) -> d.publicSpend), y_property:((d) -> (d.energyDelivered / d.publicSpend)))
+    
+    # Set default distributions
+    for own name, values of defaults
+      chart = charts[name]
+      chart.opts.mean = values.mean
+      chart.opts.standard_deviation = values.sd
+      chart.drawDistributionLine()
+    
     # Set up the controls
     d3.select("#oneRun").on('click',() -> start(1); return false)
     d3.select("#tenRuns").on('click',() -> start(10); return false)

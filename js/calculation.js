@@ -24,19 +24,30 @@ iteration = function(id, distributions) {
     value = distributions[key];
     this[key] = randomValue(value.mean, value.sd);
   }
-  this.hurdle_rate = this.hurdle_rate / 100;
-  this.availability = this.availability / 100;
-  this.efficiency = this.efficiency / 100;
-  this.annualCapitalCost = this.capital_cost * this.hurdle_rate * Math.pow(1 + this.hurdle_rate, this.economic_life) / (Math.pow(1 + this.hurdle_rate, this.loan_period) - 1);
-  this.annualCost = (this.fuel_cost / this.efficiency) + this.operating_cost + this.annualCapitalCost;
-  this.annualIncome = this.availability * (this.price + this.subsidy);
+  for (key in this) {
+    if (!__hasProp.call(this, key)) continue;
+    value = this[key];
+    if (value < 0) {
+      this[key] = 0;
+    }
+  }
+  if (this.efficiency > 100) {
+    this.efficiency = 100;
+  }
+  if (this.availability > 100) {
+    this.availability = 100;
+  }
+  this.annualCapitalCost = this.capital_cost * (this.hurdle_rate / 100) * Math.pow(1 + (this.hurdle_rate / 100), this.economic_life) / (Math.pow(1 + (this.hurdle_rate / 100), this.economic_life) - 1);
+  this.annualOutput = (1 * 365.25 * 24 / 1000) * (this.availability / 100);
+  this.annualCost = (this.annualOutput * this.fuel_cost / (this.efficiency / 100)) + this.operating_cost + this.annualCapitalCost;
+  this.cost_per_MWh = this.annualCost / this.annualOutput;
+  this.annualIncome = this.annualOutput * (this.price + this.subsidy);
   this.profit = this.annualIncome - this.annualCost;
   if (this.profit > 0) {
-    this.deployment = this.capital_available / this.capital_cost;
-    this.energyDelivered = this.deployment * this.availability;
-    this.publicSpend = this.energyDelivered * this.subsidy;
+    this.deployment = (this.capital_available * 1e9 / this.capital_cost) / 1000;
+    this.energyDelivered = this.deployment * this.annualOutput / 1000;
+    this.publicSpend = this.energyDelivered * this.subsidy / 1000;
   } else {
-    this.profit = 0;
     this.deployment = 0;
     this.energyDelivered = 0;
     this.publicSpend = 0;

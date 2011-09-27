@@ -1,4 +1,4 @@
-var charts, clear, cumulativeNormal, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
+var charts, clear, cumulativeNormal, defaults, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 normalZ = function(x, mean, standard_deviation) {
   var a;
@@ -56,7 +56,7 @@ inverse_probability_in_mean_bin = function(probability, mean, bin_width, guess_s
   }
 };
 histogram = function(opts) {
-  var block_height, block_width, click_rect, distribution_move, drawDistributionLine, empty, iteration_to_id, key, nesting_operator, point_group, stickySelected, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
+  var block_height, block_width, click_rect, distribution_move, empty, iteration_to_id, key, nesting_operator, point_group, stickySelected, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
   this.opts = opts != null ? opts : {};
   _ref = histogram.defaults;
   for (key in _ref) {
@@ -74,7 +74,7 @@ histogram = function(opts) {
     return Math.round(that.opts.property(d) / x_step) * x_step;
   });
   block_width = x(x_step) - x(0);
-  block_height = this.opts.height / ((this.opts.y_max / 100) * 500);
+  block_height = (this.opts.height / this.opts.y_max) / 5;
   tag = d3.select(this.opts.tag);
   if (this.opts.title != null) {
     tag.append("h2").text(this.opts.title);
@@ -115,11 +115,11 @@ histogram = function(opts) {
     m = d3.svg.mouse(svg.node());
     that.opts.mean = x.invert(m[0]);
     that.opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1]) / 100, that.opts.mean, x_step);
-    drawDistributionLine();
+    that.drawDistributionLine();
     return d3.event.preventDefault();
   };
   click_rect.on('click', distribution_move);
-  drawDistributionLine = function() {
+  this.drawDistributionLine = function() {
     var curve, line, points;
     if (!((that.opts.mean != null) && (that.opts.standard_deviation != null))) {
       return;
@@ -140,7 +140,7 @@ histogram = function(opts) {
     curve.transition().duration(500).attr('d', line);
     return curve.on;
   };
-  drawDistributionLine();
+  this.drawDistributionLine();
   values_to_ids = function(d) {
     return d.key;
   };
@@ -179,27 +179,6 @@ histogram = function(opts) {
     return frequencies.exit().remove();
   };
   return this;
-};
-histogram.defaults = {
-  tag: "body",
-  width: 250,
-  height: 250,
-  padding: 35,
-  x_min: 0,
-  x_max: 300,
-  y_min: 0,
-  y_max: 10,
-  x_ticks: 10,
-  y_ticks: 10,
-  property: function(d) {
-    return d;
-  },
-  bins: 50,
-  title: null,
-  x_axis_suffix: "",
-  x_axis_title: null,
-  y_axis_suffix: "%",
-  y_axis_title: "Probability"
 };
 scatterplot = function(opts) {
   var block_height, block_width, iteration_to_id, key, point_group, stickySelected, svg, tag, that, value, x, xrule, y, yrule, _ref;
@@ -276,6 +255,27 @@ scatterplot = function(opts) {
   };
   return this;
 };
+histogram.defaults = {
+  tag: "body",
+  width: 250,
+  height: 250,
+  padding: 35,
+  x_min: 0,
+  x_max: 300,
+  y_min: 0,
+  y_max: 10,
+  x_ticks: 10,
+  y_ticks: 10,
+  property: function(d) {
+    return d;
+  },
+  bins: 50,
+  title: null,
+  x_axis_suffix: "",
+  x_axis_title: null,
+  y_axis_suffix: "%",
+  y_axis_title: "Probability"
+};
 scatterplot.defaults = {
   tag: "body",
   width: 250,
@@ -299,25 +299,73 @@ scatterplot.defaults = {
   y_axis_suffix: "",
   y_axis_title: null
 };
+defaults = {
+  "subsidy": {
+    "mean": 100,
+    "sd": 0
+  },
+  "capital_cost": {
+    "mean": 3700,
+    "sd": 3700 - 2900
+  },
+  "operating_cost": {
+    "mean": 78,
+    "sd": 78 - 64
+  },
+  "fuel_cost": {
+    "mean": 0,
+    "sd": 0
+  },
+  "efficiency": {
+    "mean": 95,
+    "sd": 2
+  },
+  "availability": {
+    "mean": 86,
+    "sd": 4
+  },
+  "economic_life": {
+    "mean": 60,
+    "sd": 10
+  },
+  "hurdle_rate": {
+    "mean": 10,
+    "sd": 3
+  },
+  "capital_available": {
+    "mean": 5,
+    "sd": 1
+  },
+  "price": {
+    "mean": 50,
+    "sd": 10
+  }
+};
 charts = {};
 iterations = [];
 running = false;
 worker = null;
 setup = function() {
+  var chart, name, values;
+  charts['subsidy'] = new histogram({
+    tag: '#subsidy',
+    x_axis_title: "Subsidy (£/MWh)",
+    x_max: 400,
+    property: function(d) {
+      return d.subsidy;
+    }
+  });
   charts['capital_cost'] = new histogram({
     tag: '#capital',
     x_axis_title: "Capital cost (£/kW)",
-    mean: 100,
-    standard_deviation: 30,
+    x_max: 7500,
     property: function(d) {
       return d.capital_cost;
     }
   });
   charts['operating_cost'] = new histogram({
     tag: "#operating",
-    x_axis_title: "Operating cost (£/MWh)",
-    mean: 100,
-    standard_deviation: 50,
+    x_axis_title: "Operating cost (£/kW/yr)",
     property: function(d) {
       return d.operating_cost;
     }
@@ -325,8 +373,6 @@ setup = function() {
   charts['fuel_cost'] = new histogram({
     tag: "#fuel",
     x_axis_title: "Fuel cost (£/MWh)",
-    mean: 100,
-    standard_deviation: 50,
     property: function(d) {
       return d.fuel_cost;
     }
@@ -336,8 +382,6 @@ setup = function() {
     x_axis_title: "Efficiency",
     x_axis_suffix: "%",
     x_max: 100,
-    mean: 40,
-    standard_deviation: 5,
     property: function(d) {
       return d.efficiency;
     }
@@ -347,8 +391,6 @@ setup = function() {
     x_axis_title: "Availability or capacity factor (% of hours operating)",
     x_axis_suffix: "%",
     x_max: 100,
-    mean: 80,
-    standard_deviation: 3,
     property: function(d) {
       return d.availability;
     }
@@ -356,9 +398,7 @@ setup = function() {
   charts['economic_life'] = new histogram({
     tag: "#life",
     x_axis_title: "Economic life (years)",
-    x_max: 50,
-    mean: 30,
-    standard_deviation: 5,
+    x_max: 100,
     property: function(d) {
       return d.economic_life;
     }
@@ -368,26 +408,29 @@ setup = function() {
     x_axis_title: "Investor's hurdle rate (apr)",
     x_axis_suffix: "%",
     x_max: 20,
-    mean: 10,
-    standard_deviation: 3,
     property: function(d) {
       return d.hurdle_rate;
     }
   });
   charts['capital_available'] = new histogram({
     tag: "#quantity",
-    x_axis_title: "Investor's capital available £",
-    mean: 100,
-    standard_deviation: 30,
+    x_axis_title: "Investor's capital available £bn",
+    x_max: 10,
     property: function(d) {
-      return d.quantity;
+      return d.capital_available;
+    }
+  });
+  charts['cost_per_MWh'] = new histogram({
+    tag: "#annualcost",
+    x_axis_title: "Cost £/MWh",
+    x_max: 300,
+    property: function(d) {
+      return d.cost_per_MWh;
     }
   });
   charts['price'] = new histogram({
     tag: "#price",
     x_axis_title: "Price of electricity £/MWh",
-    mean: 200,
-    standard_deviation: 60,
     property: function(d) {
       return d.price;
     }
@@ -395,31 +438,33 @@ setup = function() {
   charts['deployment'] = new histogram({
     tag: "#deployment",
     x_axis_title: "Quantity deployed MW",
+    x_max: 3000,
     property: function(d) {
       return d.deployment;
     }
   });
   charts['energy_delivered'] = new histogram({
     tag: "#energyDelivered",
-    x_axis_title: "Energy delivered MWh",
+    x_axis_title: "Energy delivered TWh",
+    x_max: 50,
     property: function(d) {
       return d.energyDelivered;
     }
   });
   charts['public_spend'] = new histogram({
     tag: "#publicSpend",
-    x_axis_title: "Public expenditure £",
-    x_max: 2000,
+    x_axis_title: "Public expenditure £bn",
+    x_max: 5,
     property: function(d) {
       return d.publicSpend;
     }
   });
   charts['public_spend_against_energy'] = new scatterplot({
     tag: '#spendEnergyDelivered',
-    x_axis_title: "Public expenditure £",
-    y_axis_title: "Energy delivered MWh",
-    x_max: 2000,
-    y_max: 300,
+    x_axis_title: "Public expenditure £bn",
+    y_axis_title: "Energy delivered TWh",
+    x_max: 5,
+    y_max: 50,
     x_property: (function(d) {
       return d.publicSpend;
     }),
@@ -431,8 +476,8 @@ setup = function() {
     tag: '#energyPerPoundAgainstPounds',
     x_axis_title: "Public expenditure £",
     y_axis_title: "Energy per pound of public spend MWh/£",
-    x_max: 2000,
-    y_max: 0.2,
+    x_max: 5,
+    y_max: 20,
     x_property: (function(d) {
       return d.publicSpend;
     }),
@@ -440,6 +485,14 @@ setup = function() {
       return d.energyDelivered / d.publicSpend;
     })
   });
+  for (name in defaults) {
+    if (!__hasProp.call(defaults, name)) continue;
+    values = defaults[name];
+    chart = charts[name];
+    chart.opts.mean = values.mean;
+    chart.opts.standard_deviation = values.sd;
+    chart.drawDistributionLine();
+  }
   d3.select("#oneRun").on('click', function() {
     start(1);
     return false;

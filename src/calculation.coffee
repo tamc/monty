@@ -26,20 +26,25 @@ iteration = (@id,@distributions) ->
   for own key, value of distributions
     @[key] = randomValue(value.mean,value.sd)
   
-  @hurdle_rate = @hurdle_rate / 100 # Turn into percentage
-  @availability = @availability / 100 
-  @efficiency = @efficiency / 100
-  
-  @annualCapitalCost = @capital_cost * @hurdle_rate * Math.pow(1+@hurdle_rate,@economic_life) / ( Math.pow(1+@hurdle_rate,@loan_period) - 1)
-  @annualCost = (@fuel_cost / @efficiency) + @operating_cost + @annualCapitalCost
-  @annualIncome = @availability * ( @price + @subsidy )
+  # Can't allow anything less than zero
+  for own key, value of this
+    @[key] = 0 if value < 0
+    
+  # Can't allow efficiency or availability greater than a hundred percent
+  @efficiency = 100 if @efficiency > 100
+  @availability = 100 if @availability > 100
+    
+  @annualCapitalCost = @capital_cost * (@hurdle_rate/100) * Math.pow(1+(@hurdle_rate/100),@economic_life) / ( Math.pow(1+(@hurdle_rate/100),@economic_life) - 1)
+  @annualOutput = (1 * 365.25 * 24 / 1000) * (@availability / 100) # Converts kW to MWh
+  @annualCost = (@annualOutput * @fuel_cost / (@efficiency / 100)) + @operating_cost + @annualCapitalCost
+  @cost_per_MWh = @annualCost / @annualOutput
+  @annualIncome = @annualOutput * ( @price + @subsidy )
   @profit = @annualIncome - @annualCost
   if @profit > 0
-    @deployment = (@capital_available / @capital_cost)
-    @energyDelivered = @deployment *  @availability
-    @publicSpend = @energyDelivered * @subsidy
+    @deployment = (@capital_available * 1e9 / @capital_cost) / 1000 # Deployment in MW
+    @energyDelivered = @deployment * @annualOutput / 1000 # Energy delivered in TWh
+    @publicSpend = @energyDelivered * @subsidy / 1000
   else
-    @profit = 0
     @deployment = 0
     @energyDelivered = 0
     @publicSpend = 0
