@@ -7,6 +7,7 @@ g.main {
 rect.click {
   fill: #fff;
   stroke: null;
+  cursor: crosshair;
 }
 
 path.dot {
