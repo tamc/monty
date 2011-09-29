@@ -62,6 +62,9 @@ histogram = (@opts = {}) ->
   for own key, value of histogram.defaults
     @opts[key] = value unless @opts[key]?
   
+  # This is our data
+  @data = null
+  
   # Urgh. Sometimes I don't get Javascript
   that = this
   
@@ -159,14 +162,6 @@ histogram = (@opts = {}) ->
   # Group to hold all the points
   point_group = svg.append("svg:g")
   
-  # This is used for highlighting more than one block
-  stickySelected = false
-  point_group.on('mousedown',(d) -> 
-    # d3.selectAll("rect.selected").classed('selected',false).style("fill","grey"); 
-    stickySelected = true
-    d3.event.preventDefault())
-  point_group.on('mouseup',(d) ->  stickySelected = false )
-  
   empty = true
   
   distribution_move = (d) ->
@@ -180,7 +175,7 @@ histogram = (@opts = {}) ->
     d3.event.preventDefault();
   
   @allow_distribution_to_be_altered = () ->    
-    click_rect.on('click', distribution_move )
+    click_rect.on('click.distribution', distribution_move )
     
   # Draws a distribution line
   @drawDistributionLine = () ->
@@ -200,9 +195,88 @@ histogram = (@opts = {}) ->
     
     curve.transition().duration(500).attr('d',line)
     
-    curve.on
-  
-  @drawDistributionLine()
+  rect = null
+  x0 = 0
+  x1 = 0
+  count = null
+
+  selection_mousedown = () ->
+    return if empty
+    x0 = d3.svg.mouse(this);
+    count = 0;
+    
+    rect = d3.select(this.parentNode).append("svg:rect")
+        .style("stroke","none")
+        .style("fill", "#999")
+        .style("fill-opacity", .5)
+        .style("pointer-events","none")
+
+    d3.event.preventDefault();
+    
+  selection_mousemove = () ->
+    return unless rect
+    x1 = d3.svg.mouse(this)
+
+    #x1[0] = Math.max(padding / 2, Math.min(size - padding / 2, x1[0]));
+    #x1[1] = Math.max(padding / 2, Math.min(size - padding / 2, x1[1]));
+
+    minx = Math.min(x0[0], x1[0])
+    maxx = Math.max(x0[0], x1[0])
+    miny = 0 # Math.min(x0[1], x1[1])
+    maxy = opts.height # Math.max(x0[1], x1[1])
+
+    rect
+        .attr("x", minx - .5)
+        .attr("y", miny - .5)
+        .attr("width", maxx - minx + 1)
+        .attr("height", maxy - miny + 1);
+    
+    data_min_x = x.invert(minx)
+    data_max_x = x.invert(maxx)
+    
+    filter = (d,i) ->
+      point = that.opts.property(d)
+      if point >= data_min_x && point <= data_max_x
+        d3.selectAll(".block#{d.id}").classed("selected",true).style("fill", "yellow")
+        count++
+    
+    d3.selectAll("rect.selected").classed("selected",false).style("fill", "grey")
+    
+    point_group.selectAll("rect.block").each(filter)
+    
+    
+  #   var v = rect.node().__data__,
+  #       x = position[v.x],
+  #       y = position[v.y],
+  #       mins = x.invert(minx),
+  #       maxs = x.invert(maxx),
+  #       mint = y.invert(size - maxy),
+  #       maxt = y.invert(size - miny);
+  # 
+  #   count = 0;
+  #   svg.selectAll("circle")
+  #       .style("fill", function(d) {
+  #         return mins <= d.y[v.x] && maxs >= d.y[v.x]
+  #             && mint <= d.y[v.y] && maxt >= d.y[v.y]
+  #             ? (count++, color(d.y.species))
+  #             : "#ccc";
+  #       });
+  # }
+
+  selection_mouseup = () ->
+    console.log "mouseup.selection"
+    return unless rect
+    rect.remove()
+    rect = null
+    
+    if count == 0
+      d3.selectAll("rect.selected").classed("selected",false).style("fill", "grey")
+
+  click_rect
+    .on('mousedown.selection',selection_mousedown)
+    .on('mousemove.selection',selection_mousemove)  
+    .on('mouseup.selection',selection_mouseup)    
+    .on('mouseout.selection',selection_mouseup)    
   
   values_to_ids = (d) -> d.key
   values_to_frequencies = (d) -> d.values
@@ -216,6 +290,7 @@ histogram = (@opts = {}) ->
   # Updates the histogram points on the chart
   @update = (data) ->
     empty = false
+    @data = data
     
     # Turn the data into buckets    
     buckets = nesting_operator.entries(data)
@@ -239,11 +314,11 @@ histogram = (@opts = {}) ->
         .attr("y", (d,i) -> that.opts.height - ((i+1)*block_height) )
         .attr("width",block_width)
         .attr("height",block_height)
-        .on('mouseover', (d) -> d3.selectAll(".block#{d.id}").classed("selected",true).style("fill", "yellow") )
-        .on('mouseout', (d) -> 
-          return if stickySelected == true
-          d3.selectAll("rect.selected").classed("selected",false).style("fill", "grey")
-        )
+        # .on('mouseover', (d) -> d3.selectAll(".block#{d.id}").classed("selected",true).style("fill", "yellow") )
+        # .on('mouseout', (d) -> 
+        #   return if stickySelected == true
+        #   d3.selectAll("rect.selected").classed("selected",false).style("fill", "grey")
+        # )
         .style("fill", "yellow")
         .transition()
           .duration(1000)
@@ -488,7 +563,6 @@ start = (number_of_iterations = 500) ->
   worker.onerror = (error) ->  
     console.log("Calculation error: " + error.message + "\n")
     throw error
-  console.log distributions()
   worker.postMessage(starting_id: iterations.length, number_of_iterations: number_of_iterations, distributions: distributions());
 
 clear = () ->

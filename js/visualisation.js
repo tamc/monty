@@ -56,7 +56,7 @@ inverse_probability_in_mean_bin = function(probability, mean, bin_width, guess_s
   }
 };
 histogram = function(opts) {
-  var block_height, block_width, click_rect, distribution_move, empty, iteration_to_id, key, nesting_operator, point_group, stickySelected, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x_step, xrule, y, yrule, _ref;
+  var block_height, block_width, click_rect, count, distribution_move, empty, iteration_to_id, key, nesting_operator, point_group, rect, selection_mousedown, selection_mousemove, selection_mouseup, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x0, x1, x_step, xrule, y, yrule, _ref;
   this.opts = opts != null ? opts : {};
   _ref = histogram.defaults;
   for (key in _ref) {
@@ -66,6 +66,7 @@ histogram = function(opts) {
       this.opts[key] = value;
     }
   }
+  this.data = null;
   that = this;
   x = d3.scale.linear().domain([this.opts.x_min, this.opts.x_max]).range([0, this.opts.width]);
   y = d3.scale.linear().domain([this.opts.y_min, this.opts.y_max]).range([this.opts.height, 0]);
@@ -98,14 +99,6 @@ histogram = function(opts) {
     svg.append("svg:text").attr("x", -this.opts.height / 2).attr("y", this.opts.width / 2).attr("dy", ".31em").attr("text-anchor", "middle").attr("transform", "rotate(-90)translate(0,-" + ((this.opts.width / 2) + 30) + ")").text(this.opts.y_axis_title);
   }
   point_group = svg.append("svg:g");
-  stickySelected = false;
-  point_group.on('mousedown', function(d) {
-    stickySelected = true;
-    return d3.event.preventDefault();
-  });
-  point_group.on('mouseup', function(d) {
-    return stickySelected = false;
-  });
   empty = true;
   distribution_move = function(d) {
     var m;
@@ -119,7 +112,7 @@ histogram = function(opts) {
     return d3.event.preventDefault();
   };
   this.allow_distribution_to_be_altered = function() {
-    return click_rect.on('click', distribution_move);
+    return click_rect.on('click.distribution', distribution_move);
   };
   this.drawDistributionLine = function() {
     var curve, line, points;
@@ -139,10 +132,57 @@ histogram = function(opts) {
     });
     curve = svg.selectAll('path.distribution').data([points]);
     curve.enter().append('svg:path').attr('class', 'distribution');
-    curve.transition().duration(500).attr('d', line);
-    return curve.on;
+    return curve.transition().duration(500).attr('d', line);
   };
-  this.drawDistributionLine();
+  rect = null;
+  x0 = 0;
+  x1 = 0;
+  count = null;
+  selection_mousedown = function() {
+    if (empty) {
+      return;
+    }
+    x0 = d3.svg.mouse(this);
+    count = 0;
+    rect = d3.select(this.parentNode).append("svg:rect").style("stroke", "none").style("fill", "#999").style("fill-opacity", .5).style("pointer-events", "none");
+    return d3.event.preventDefault();
+  };
+  selection_mousemove = function() {
+    var data_max_x, data_min_x, filter, maxx, maxy, minx, miny;
+    if (!rect) {
+      return;
+    }
+    x1 = d3.svg.mouse(this);
+    minx = Math.min(x0[0], x1[0]);
+    maxx = Math.max(x0[0], x1[0]);
+    miny = 0;
+    maxy = opts.height;
+    rect.attr("x", minx - .5).attr("y", miny - .5).attr("width", maxx - minx + 1).attr("height", maxy - miny + 1);
+    data_min_x = x.invert(minx);
+    data_max_x = x.invert(maxx);
+    filter = function(d, i) {
+      var point;
+      point = that.opts.property(d);
+      if (point >= data_min_x && point <= data_max_x) {
+        d3.selectAll(".block" + d.id).classed("selected", true).style("fill", "yellow");
+        return count++;
+      }
+    };
+    d3.selectAll("rect.selected").classed("selected", false).style("fill", "grey");
+    return point_group.selectAll("rect.block").each(filter);
+  };
+  selection_mouseup = function() {
+    console.log("mouseup.selection");
+    if (!rect) {
+      return;
+    }
+    rect.remove();
+    rect = null;
+    if (count === 0) {
+      return d3.selectAll("rect.selected").classed("selected", false).style("fill", "grey");
+    }
+  };
+  click_rect.on('mousedown.selection', selection_mousedown).on('mousemove.selection', selection_mousemove).on('mouseup.selection', selection_mouseup).on('mouseout.selection', selection_mouseup);
   values_to_ids = function(d) {
     return d.key;
   };
@@ -159,6 +199,7 @@ histogram = function(opts) {
   this.update = function(data) {
     var buckets, frequencies, values;
     empty = false;
+    this.data = data;
     buckets = nesting_operator.entries(data);
     values = point_group.selectAll("g.value").data(buckets, values_to_ids);
     values.enter().append("svg:g").attr("class", "value").attr("transform", function(d) {
@@ -170,14 +211,7 @@ histogram = function(opts) {
       return "block block" + d.id;
     }).attr("y", function(d, i) {
       return that.opts.height - ((i + 1) * block_height);
-    }).attr("width", block_width).attr("height", block_height).on('mouseover', function(d) {
-      return d3.selectAll(".block" + d.id).classed("selected", true).style("fill", "yellow");
-    }).on('mouseout', function(d) {
-      if (stickySelected === true) {
-        return;
-      }
-      return d3.selectAll("rect.selected").classed("selected", false).style("fill", "grey");
-    }).style("fill", "yellow").transition().duration(1000).style("fill", "grey");
+    }).attr("width", block_width).attr("height", block_height).style("fill", "yellow").transition().duration(1000).style("fill", "grey");
     return frequencies.exit().remove();
   };
   return this;
@@ -565,7 +599,6 @@ start = function(number_of_iterations) {
     console.log("Calculation error: " + error.message + "\n");
     throw error;
   };
-  console.log(distributions());
   return worker.postMessage({
     starting_id: iterations.length,
     number_of_iterations: number_of_iterations,

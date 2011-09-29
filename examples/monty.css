@@ -1,13 +1,16 @@
 body {
   font: 10px sans-serif;
 }
+
 g.main {
+  pointer-events: none
 }
 
 rect.click {
   fill: #fff;
-  stroke: null;
+  stroke: none;
   cursor: crosshair;
+  pointer-events: all;
 }
 
 path.dot {
@@ -16,7 +19,7 @@ path.dot {
 }
 
 rect {
-  fill: null;
+  fill: none;
   stroke: black;
   shape-rendering: crispEdges;
 }
@@ -29,7 +32,6 @@ rect {
 rect.block {
   fill: #aaa;
   stroke: #999;
-  shape-rendering: crispEdges;
 }
 
 rect.selected, rect.stickySelected {
@@ -42,7 +44,7 @@ rect.old {
 }
 
 path.distribution {
-  fill: null;
+  fill: none;
   stroke: #f00;
   shape-rendering: crispEdges;
 }
