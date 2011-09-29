@@ -54,17 +54,15 @@ inverse_probability_in_mean_bin = (probability, mean, bin_width, guess_step = bi
     return inverse_probability_in_mean_bin(probability,mean,bin_width, guess_step / 10, standard_deviation_guess - guess_step)
   else
     return standard_deviation_guess  
-  
 
 # Drawing a histogram
 histogram = (@opts = {}) ->
   # Set default options
   for own key, value of histogram.defaults
     @opts[key] = value unless @opts[key]?
-  
-  # This is our data
+    
   @data = null
-  
+    
   # Urgh. Sometimes I don't get Javascript
   that = this
   
@@ -171,14 +169,15 @@ histogram = (@opts = {}) ->
     that.opts.mean = x.invert(m[0])
     that.opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1])/100,that.opts.mean, x_step) 
     that.drawDistributionLine()
+    that.distributionUpdated() if that.distributionUpdated?
     d3.event.preventDefault();
   
   @allow_distribution_to_be_altered = () ->    
     click_rect.on('click.distribution', distribution_move )
     
   # Draws a distribution line
-  @drawDistributionLine = () ->
-    return unless that.opts.mean? && that.opts.standard_deviation?
+  @drawDistributionLine = () ->    
+    return unless that.opts.mean?  && that.opts.standard_deviation?
 
     # Point to line mapping
     line = d3.svg.line().x((d) -> x(d.x)).y((d) -> y(d.y))
@@ -193,7 +192,20 @@ histogram = (@opts = {}) ->
         .attr('class','distribution')
     
     curve.transition().duration(500).attr('d',line)
+  
+  @showMedianForDatum = (d) ->
+    mean = svg.selectAll('line.median')
+            .data([1])
     
+    mean.enter().append('svg:line')
+      .attr('class','median')
+    
+    mean.transition().duration(500)
+      .attr('x1', x(that.opts.property(d)))
+      .attr('x2', x(that.opts.property(d)))
+      .attr('y1', 0)
+      .attr('y2', that.opts.height)
+      
   rect = null
   selection_label = null
   x0 = 0
@@ -284,6 +296,7 @@ histogram = (@opts = {}) ->
   
   # Removes histogram points from the chart
   @clear = () ->    
+    d3.selectAll(".selection").remove()
     point_group.selectAll("g.value").remove()
     empty = true
   
@@ -314,22 +327,14 @@ histogram = (@opts = {}) ->
         .attr("y", (d,i) -> that.opts.height - ((i+1)*block_height) )
         .attr("width",block_width)
         .attr("height",block_height)
-        # .on('mouseover', (d) -> d3.selectAll(".block#{d.id}").classed("selected",true).style("fill", "yellow") )
-        # .on('mouseout', (d) -> 
-        #   return if stickySelected == true
-        #   d3.selectAll("rect.selected").classed("selected",false).style("fill", "grey")
-        # )
         .style("fill", "yellow")
         .transition()
           .duration(1000)
           .style("fill", "grey");
-          
     
     frequencies.exit().remove()
   
   this
-
-
 
 scatterplot = (@opts = {}) ->
   # Set default options
@@ -420,6 +425,32 @@ scatterplot = (@opts = {}) ->
 
   point_group = svg.append("svg:g")
   empty = true
+  
+  @showMedianForDatum = (d) ->
+    x_median = svg.selectAll('line.xmedian')
+            .data([1])
+    
+    x_median.enter().append('svg:line')
+      .attr('class','xmedian')
+    
+    x_median.transition().duration(500)
+      .attr('x1', x(that.opts.x_property(d)))
+      .attr('x2', x(that.opts.x_property(d)))
+      .attr('y1', 0)
+      .attr('y2', that.opts.height)
+
+    y_median = svg.selectAll('line.ymedian')
+            .data([1])
+     
+    y_median.enter().append('svg:line')
+      .attr('class','ymedian')
+     
+    y_median.transition().duration(500)
+      .attr('x1', 0)
+      .attr('x2', that.opts.width)
+      .attr('y1', y(that.opts.y_property(d)))
+      .attr('y2', y(that.opts.y_property(d)))
+  
   
   rect = null
   selection_label = null
@@ -517,6 +548,7 @@ scatterplot = (@opts = {}) ->
   block_height = 5
   
   @clear = () ->
+    d3.selectAll(".selection").remove()
     point_group.selectAll("rect.block").remove()
     empty = true
   
@@ -640,6 +672,26 @@ setup = () ->
     d3.select("#fiveHundredRuns").on('click',() -> start(500); return false)
     d3.select("#stopButton").on('click',() -> stop(); return false)
     d3.select("#clearButton").on('click',() -> clear(); return false)
+    
+    # Set up the green lines to indicate calculated median
+    histogram.prototype.distributionUpdated = () ->
+      console.log distributions()
+      stop()
+      worker = new Worker('../js/calculation.js')
+      worker.onmessage = (event) ->
+        console.log event.data
+        for own name, chart of charts  
+          chart.showMedianForDatum(event.data)
+      worker.postMessage(starting_id: 1, number_of_iterations: 1, distributions: medians());
+    
+    charts['capital_cost'].distributionUpdated()
+
+medians = () ->
+  parameters = {}
+  for own name, chart of charts
+    if chart.opts.mean? && chart.opts.standard_deviation?
+      parameters[name] = { mean: chart.opts.mean, sd: 0 }
+  parameters  
 
 distributions = () ->
   parameters = {}

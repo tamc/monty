@@ -1,4 +1,4 @@
-var charts, clear, cumulativeNormal, defaults, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
+var charts, clear, cumulativeNormal, defaults, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, medians, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 normalZ = function(x, mean, standard_deviation) {
   var a;
@@ -109,6 +109,9 @@ histogram = function(opts) {
     that.opts.mean = x.invert(m[0]);
     that.opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1]) / 100, that.opts.mean, x_step);
     that.drawDistributionLine();
+    if (that.distributionUpdated != null) {
+      that.distributionUpdated();
+    }
     return d3.event.preventDefault();
   };
   this.allow_distribution_to_be_altered = function() {
@@ -133,6 +136,12 @@ histogram = function(opts) {
     curve = svg.selectAll('path.distribution').data([points]);
     curve.enter().append('svg:path').attr('class', 'distribution');
     return curve.transition().duration(500).attr('d', line);
+  };
+  this.showMedianForDatum = function(d) {
+    var mean;
+    mean = svg.selectAll('line.median').data([1]);
+    mean.enter().append('svg:line').attr('class', 'median');
+    return mean.transition().duration(500).attr('x1', x(that.opts.property(d))).attr('x2', x(that.opts.property(d))).attr('y1', 0).attr('y2', that.opts.height);
   };
   rect = null;
   selection_label = null;
@@ -206,6 +215,7 @@ histogram = function(opts) {
     return +d.id;
   };
   this.clear = function() {
+    d3.selectAll(".selection").remove();
     point_group.selectAll("g.value").remove();
     return empty = true;
   };
@@ -268,6 +278,15 @@ scatterplot = function(opts) {
   }
   point_group = svg.append("svg:g");
   empty = true;
+  this.showMedianForDatum = function(d) {
+    var x_median, y_median;
+    x_median = svg.selectAll('line.xmedian').data([1]);
+    x_median.enter().append('svg:line').attr('class', 'xmedian');
+    x_median.transition().duration(500).attr('x1', x(that.opts.x_property(d))).attr('x2', x(that.opts.x_property(d))).attr('y1', 0).attr('y2', that.opts.height);
+    y_median = svg.selectAll('line.ymedian').data([1]);
+    y_median.enter().append('svg:line').attr('class', 'ymedian');
+    return y_median.transition().duration(500).attr('x1', 0).attr('x2', that.opts.width).attr('y1', y(that.opts.y_property(d))).attr('y2', y(that.opts.y_property(d)));
+  };
   rect = null;
   selection_label = null;
   x0 = 0;
@@ -339,6 +358,7 @@ scatterplot = function(opts) {
   block_width = 5;
   block_height = 5;
   this.clear = function() {
+    d3.selectAll(".selection").remove();
     point_group.selectAll("rect.block").remove();
     return empty = true;
   };
@@ -617,10 +637,47 @@ setup = function() {
     stop();
     return false;
   });
-  return d3.select("#clearButton").on('click', function() {
+  d3.select("#clearButton").on('click', function() {
     clear();
     return false;
   });
+  histogram.prototype.distributionUpdated = function() {
+    console.log(distributions());
+    stop();
+    worker = new Worker('../js/calculation.js');
+    worker.onmessage = function(event) {
+      var chart, name, _results;
+      console.log(event.data);
+      _results = [];
+      for (name in charts) {
+        if (!__hasProp.call(charts, name)) continue;
+        chart = charts[name];
+        _results.push(chart.showMedianForDatum(event.data));
+      }
+      return _results;
+    };
+    return worker.postMessage({
+      starting_id: 1,
+      number_of_iterations: 1,
+      distributions: medians()
+    });
+  };
+  return charts['capital_cost'].distributionUpdated();
+};
+medians = function() {
+  var chart, name, parameters;
+  parameters = {};
+  for (name in charts) {
+    if (!__hasProp.call(charts, name)) continue;
+    chart = charts[name];
+    if ((chart.opts.mean != null) && (chart.opts.standard_deviation != null)) {
+      parameters[name] = {
+        mean: chart.opts.mean,
+        sd: 0
+      };
+    }
+  }
+  return parameters;
 };
 distributions = function() {
   var chart, name, parameters;

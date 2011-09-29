@@ -46,7 +46,12 @@ rect.old {
 path.distribution {
   fill: none;
   stroke: #f00;
-  shape-rendering: crispEdges;
+}
+
+line.median, line.xmedian, line.ymedian {
+  fill: none;
+  stroke: #0f0;
+  stroke-width: 2;
 }
 
 div.chartGroup {
