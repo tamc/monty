@@ -160,8 +160,7 @@ histogram = (@opts = {}) ->
       .text(@opts.y_axis_title)
   
   # Group to hold all the points
-  point_group = svg.append("svg:g")
-  
+  point_group = svg.append("svg:g")  
   empty = true
   
   distribution_move = (d) ->
@@ -196,29 +195,37 @@ histogram = (@opts = {}) ->
     curve.transition().duration(500).attr('d',line)
     
   rect = null
+  selection_label = null
   x0 = 0
   x1 = 0
   count = null
+  selecting = false
 
   selection_mousedown = () ->
     return if empty
+    return if selecting
+    selecting = true
+    d3.selectAll(".selection").remove()
     x0 = d3.svg.mouse(this);
     count = 0;
     
     rect = d3.select(this.parentNode).append("svg:rect")
+        .attr("class","selection")
         .style("stroke","none")
         .style("fill", "#999")
         .style("fill-opacity", .5)
         .style("pointer-events","none")
+    
+    selection_label = d3.select(this.parentNode)
+        .append("svg:text")
+        .attr("class","selection")        
+        .style("text-anchor","middle")
 
     d3.event.preventDefault();
     
   selection_mousemove = () ->
-    return unless rect
+    return unless selecting
     x1 = d3.svg.mouse(this)
-
-    #x1[0] = Math.max(padding / 2, Math.min(size - padding / 2, x1[0]));
-    #x1[1] = Math.max(padding / 2, Math.min(size - padding / 2, x1[1]));
 
     minx = Math.min(x0[0], x1[0])
     maxx = Math.max(x0[0], x1[0])
@@ -229,10 +236,18 @@ histogram = (@opts = {}) ->
         .attr("x", minx - .5)
         .attr("y", miny - .5)
         .attr("width", maxx - minx + 1)
-        .attr("height", maxy - miny + 1);
+        .attr("height", maxy - miny + 1)
+        
+    selection_label
+      .attr("x", (minx  + maxx) / 2)
+      .attr("y", (miny + maxy) / 2)
+      .attr("width", maxx - minx + 1)
+      .attr("height", maxy - miny + 1)
     
     data_min_x = x.invert(minx)
     data_max_x = x.invert(maxx)
+    
+    count = 0
     
     filter = (d,i) ->
       point = that.opts.property(d)
@@ -244,32 +259,17 @@ histogram = (@opts = {}) ->
     
     point_group.selectAll("rect.block").each(filter)
     
+    selection_label.text("Selected #{count} out of #{that.data.length} (#{Math.round((count/that.data.length)*100)}%)")
     
-  #   var v = rect.node().__data__,
-  #       x = position[v.x],
-  #       y = position[v.y],
-  #       mins = x.invert(minx),
-  #       maxs = x.invert(maxx),
-  #       mint = y.invert(size - maxy),
-  #       maxt = y.invert(size - miny);
-  # 
-  #   count = 0;
-  #   svg.selectAll("circle")
-  #       .style("fill", function(d) {
-  #         return mins <= d.y[v.x] && maxs >= d.y[v.x]
-  #             && mint <= d.y[v.y] && maxt >= d.y[v.y]
-  #             ? (count++, color(d.y.species))
-  #             : "#ccc";
-  #       });
-  # }
-
   selection_mouseup = () ->
-    console.log "mouseup.selection"
-    return unless rect
-    rect.remove()
-    rect = null
+    return unless selecting
+    selecting = false
     
     if count == 0
+      rect.remove()
+      rect = null
+      selection_label.remove()
+      selection_label = null
       d3.selectAll("rect.selected").classed("selected",false).style("fill", "grey")
 
   click_rect
@@ -336,6 +336,9 @@ scatterplot = (@opts = {}) ->
   for own key, value of scatterplot.defaults
     @opts[key] = value unless @opts[key]?
   
+  # This is our data
+  @data = null
+  
   that = this
     
   # Set up scales
@@ -351,7 +354,16 @@ scatterplot = (@opts = {}) ->
       .attr("width", @opts.width + @opts.padding * 2)
       .attr("height", @opts.height + @opts.padding * 2)
     .append("svg:g")
+      .attr("class","main")
       .attr("transform", "translate(" + @opts.padding + "," + @opts.padding + ")")
+  
+  # This captures clicks
+  click_rect = svg.append("svg:rect")
+    .attr("class","click")
+    .attr("x", 0 )
+    .attr("y", 0 )
+    .attr("width", @opts.width )
+    .attr("height", @opts.height)
   
   xrule = svg.selectAll("g.x")
       .data(x.ticks(@opts.x_ticks))
@@ -379,7 +391,6 @@ scatterplot = (@opts = {}) ->
       .attr("text-anchor", "middle")
       .text(@opts.x_axis_title)
 
-  
   yrule = svg.selectAll("g.y")
       .data(y.ticks(@opts.y_ticks))
     .enter().append("svg:g")
@@ -408,9 +419,98 @@ scatterplot = (@opts = {}) ->
       .text(@opts.y_axis_title)
 
   point_group = svg.append("svg:g")
-  stickySelected = false  
-  point_group.on('mousedown',(d) -> d3.selectAll("rect.stickySelected").classed('stickySelected',false); stickySelected = true )
-  point_group.on('mouseup',(d) -> stickySelected = false )  
+  empty = true
+  
+  rect = null
+  selection_label = null
+  x0 = 0
+  x1 = 0
+  count = null
+  selecting = false
+
+  selection_mousedown = () ->
+    return if empty
+    return if selecting
+    selecting = true
+    d3.selectAll(".selection").remove()
+    x0 = d3.svg.mouse(this);
+    count = 0;
+    
+    rect = d3.select(this.parentNode).append("svg:rect")
+        .attr("class","selection")
+        .style("stroke","none")
+        .style("fill", "#999")
+        .style("fill-opacity", .5)
+        .style("pointer-events","none")
+    
+    selection_label = d3.select(this.parentNode)
+        .append("svg:text")
+        .attr("class","selection")        
+        .style("text-anchor","middle")
+
+    d3.event.preventDefault();
+    
+  selection_mousemove = () ->
+    return unless selecting
+    x1 = d3.svg.mouse(this)
+
+    #x1[0] = Math.max(padding / 2, Math.min(size - padding / 2, x1[0]));
+    #x1[1] = Math.max(padding / 2, Math.min(size - padding / 2, x1[1]));
+
+    minx = Math.min(x0[0], x1[0])
+    maxx = Math.max(x0[0], x1[0])
+    miny = Math.min(x0[1], x1[1])
+    maxy = Math.max(x0[1], x1[1])
+
+    rect
+        .attr("x", minx - .5)
+        .attr("y", miny - .5)
+        .attr("width", maxx - minx + 1)
+        .attr("height", maxy - miny + 1)
+        
+    selection_label
+      .attr("x", (minx  + maxx) / 2)
+      .attr("y", (miny + maxy) / 2)
+      .attr("width", maxx - minx + 1)
+      .attr("height", maxy - miny + 1)
+    
+    data_min_x = x.invert(minx)
+    data_max_x = x.invert(maxx)
+    data_min_y = y.invert(maxy) # Watch out for the scale inversion!
+    data_max_y = y.invert(miny)
+    
+    count = 0
+    
+    filter = (d,i) ->
+      point_x = that.opts.x_property(d)
+      point_y = that.opts.y_property(d)
+      if point_x >= data_min_x && point_x <= data_max_x && point_y >= data_min_y && point_y <= data_max_y
+        d3.selectAll(".block#{d.id}").classed("selected",true).style("fill", "yellow")
+        count++
+    
+    d3.selectAll("rect.selected").classed("selected",false).style("fill", "grey")
+    
+    point_group.selectAll("rect.block").each(filter)
+    
+    selection_label.text("Selected #{count} out of #{that.data.length} (#{Math.round((count/that.data.length)*100)}%)")
+    
+  selection_mouseup = () ->
+    return unless selecting
+    selecting = false
+    
+    if count == 0
+      rect.remove()
+      rect = null
+      selection_label.remove()
+      selection_label = null
+      d3.selectAll("rect.selected").classed("selected",false).style("fill", "grey")
+
+  click_rect
+    .on('mousedown.selection',selection_mousedown)
+    .on('mousemove.selection',selection_mousemove)  
+    .on('mouseup.selection',selection_mouseup)    
+    .on('mouseout.selection',selection_mouseup)    
+  
   
   iteration_to_id = (d) -> d.id
   block_width = 5
@@ -418,8 +518,11 @@ scatterplot = (@opts = {}) ->
   
   @clear = () ->
     point_group.selectAll("rect.block").remove()
+    empty = true
   
   @update = (data) ->
+    @data = data
+    empty = false
 
     frequencies = point_group.selectAll("rect.block")
         .data(data,iteration_to_id)       
@@ -430,14 +533,14 @@ scatterplot = (@opts = {}) ->
         .attr("y", (d) -> y(that.opts.y_property(d))-block_height )
         .attr("width",block_width)
         .attr("height",block_height)
-        .on('mouseover', (d) -> 
-          d3.selectAll("rect.selected").classed('selected',false)
-          if stickySelected == true
-            d3.selectAll(".block#{d.id}").classed('stickySelected',true)
-          else
-            d3.selectAll(".block#{d.id}").classed('selected',true)
-        )
-        .on('mouseout', (d) -> d3.selectAll(".block#{d.id}").classed('selected',false))
+        # .on('mouseover', (d) -> 
+        #   d3.selectAll("rect.selected").classed('selected',false)
+        #   if stickySelected == true
+        #     d3.selectAll(".block#{d.id}").classed('stickySelected',true)
+        #   else
+        #     d3.selectAll(".block#{d.id}").classed('selected',true)
+        # )
+        # .on('mouseout', (d) -> d3.selectAll(".block#{d.id}").classed('selected',false))
         .style("fill", "yellow")
         .transition()
           .duration(1000)
@@ -464,7 +567,7 @@ histogram.defaults =
   x_axis_suffix: ""
   x_axis_title: null 
   y_axis_suffix: "%"
-  y_axis_title: "Probability"
+  y_axis_title: "Proportion over 500 runs"
 
 scatterplot.defaults =
   tag:      "body"
