@@ -1,4 +1,4 @@
-var charts, clear, cumulativeNormal, defaults, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, medians, normalZ, probability_in_bin, running, scatterplot, setToDefaults, setup, start, stop, worker;
+var charts, clear, cumulativeNormal, defaults, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, medians, normalZ, probability_in_bin, running, scatterplot, setToDefaults, setup, start, stop, toggleDistributions, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 normalZ = function(x, mean, standard_deviation) {
   var a;
@@ -56,7 +56,7 @@ inverse_probability_in_mean_bin = function(probability, mean, bin_width, guess_s
   }
 };
 histogram = function(opts) {
-  var block_height, block_width, click_rect, count, distribution_move, empty, iteration_to_id, key, nesting_operator, point_group, rect, selecting, selection_label, selection_mousedown, selection_mousemove, selection_mouseup, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x0, x1, x_step, xrule, y, yrule, _ref;
+  var block_height, block_width, click_rect, count, distribution_displayed, distribution_move, empty, iteration_to_id, key, nesting_operator, point_group, rect, selecting, selection_label, selection_mousedown, selection_mousemove, selection_mouseup, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x0, x1, x_step, xrule, y, y_axis_group, yrule, _ref;
   this.opts = opts != null ? opts : {};
   _ref = histogram.defaults;
   for (key in _ref) {
@@ -90,13 +90,14 @@ histogram = function(opts) {
   if (this.opts.x_axis_title != null) {
     svg.append("svg:text").attr("x", this.opts.width / 2).attr("y", this.opts.height + 18).attr("dy", ".71em").attr("text-anchor", "middle").text(this.opts.x_axis_title);
   }
-  yrule = svg.selectAll("g.y").data(y.ticks(this.opts.y_ticks)).enter().append("svg:g").attr("class", "y");
+  y_axis_group = svg.append("svg:g").attr("class", 'yaxisgroup');
+  yrule = y_axis_group.selectAll("g.y").data(y.ticks(this.opts.y_ticks)).enter().append("svg:g").attr("class", "y");
   yrule.append("svg:line").attr("x1", 0).attr("x2", this.opts.width).attr("y1", y).attr("y2", y);
   yrule.append("svg:text").attr("x", -3).attr("y", y).attr("dy", ".35em").attr("text-anchor", "end").text(function(d) {
     return y.tickFormat(that.opts.y_ticks)(d) + that.opts.y_axis_suffix;
   });
   if (this.opts.y_axis_title != null) {
-    svg.append("svg:text").attr("x", -this.opts.height / 2).attr("y", this.opts.width / 2).attr("dy", ".31em").attr("text-anchor", "middle").attr("transform", "rotate(-90)translate(0,-" + ((this.opts.width / 2) + 30) + ")").text(this.opts.y_axis_title);
+    y_axis_group.append("svg:text").attr("x", -this.opts.height / 2).attr("y", this.opts.width / 2).attr("dy", ".31em").attr("text-anchor", "middle").attr("transform", "rotate(-90)translate(0,-" + ((this.opts.width / 2) + 30) + ")").text(this.opts.y_axis_title);
   }
   point_group = svg.append("svg:g");
   empty = true;
@@ -134,7 +135,7 @@ histogram = function(opts) {
       };
     });
     curve = svg.selectAll('path.distribution').data([points]);
-    curve.enter().append('svg:path').attr('class', 'distribution');
+    curve.enter().append('svg:path').attr('class', 'distribution toggleWithDistribution');
     curve.transition().duration(500).attr('d', line);
     if (that.distributionUpdated != null) {
       return that.distributionUpdated();
@@ -239,6 +240,18 @@ histogram = function(opts) {
       return that.opts.height - ((i + 1) * block_height);
     }).attr("width", block_width).attr("height", block_height).style("fill", "yellow").transition().duration(1000).style("fill", "grey");
     return frequencies.exit().remove();
+  };
+  distribution_displayed = true;
+  point_group.classed('toggleWithDistribution', true);
+  svg.selectAll('.yaxisgroup').classed('toggleWithDistribution', true);
+  this.toggleDistributions = function() {
+    if (distribution_displayed === true) {
+      svg.selectAll('.toggleWithDistribution').attr("style", "visibility:hidden");
+      return distribution_displayed = false;
+    } else {
+      svg.selectAll('.toggleWithDistribution').attr("style", "visibility:visible");
+      return distribution_displayed = true;
+    }
   };
   return this;
 };
@@ -639,8 +652,12 @@ setup = function() {
     setToDefaults();
     return false;
   });
+  d3.select("#toggleDistributions").on('click', function() {
+    clear();
+    toggleDistributions();
+    return false;
+  });
   histogram.prototype.distributionUpdated = function() {
-    console.log(distributions());
     stop();
     worker = new Worker('../js/calculation.js');
     worker.onmessage = function(event) {
@@ -669,6 +686,16 @@ setToDefaults = function() {
     values = defaults[name];
     chart = charts[name];
     _results.push(chart != null ? (chart.opts.mean = values.mean, chart.opts.standard_deviation = values.sd, chart.drawDistributionLine(), chart.allow_distribution_to_be_altered()) : void 0);
+  }
+  return _results;
+};
+toggleDistributions = function() {
+  var chart, name, _results;
+  _results = [];
+  for (name in charts) {
+    if (!__hasProp.call(charts, name)) continue;
+    chart = charts[name];
+    _results.push(chart.toggleDistributions != null ? chart.toggleDistributions() : void 0);
   }
   return _results;
 };

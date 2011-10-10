@@ -126,8 +126,10 @@ histogram = (@opts = {}) ->
       .attr("text-anchor", "middle")
       .text(@opts.x_axis_title)
   
+  y_axis_group = svg.append("svg:g").attr("class",'yaxisgroup')
+  
   # y-axis groups
-  yrule = svg.selectAll("g.y")
+  yrule = y_axis_group.selectAll("g.y")
       .data(y.ticks(@opts.y_ticks))
     .enter().append("svg:g")
       .attr("class", "y");
@@ -149,16 +151,16 @@ histogram = (@opts = {}) ->
   
   # optional y-axis titles
   if @opts.y_axis_title?
-    svg.append("svg:text")
+    y_axis_group.append("svg:text")
       .attr("x",-@opts.height/2)
       .attr("y", @opts.width / 2)
       .attr("dy", ".31em")
       .attr("text-anchor", "middle")
       .attr("transform","rotate(-90)translate(0,-#{(@opts.width/2)+30})")
       .text(@opts.y_axis_title)
-  
+    
   # Group to hold all the points
-  point_group = svg.append("svg:g")  
+  point_group = svg.append("svg:g")
   empty = true
   
   distribution_move = (d) ->
@@ -187,9 +189,9 @@ histogram = (@opts = {}) ->
     
     curve = svg.selectAll('path.distribution')
         .data([points])
-    
+            
     curve.enter().append('svg:path')
-        .attr('class','distribution')
+        .attr('class','distribution toggleWithDistribution')
     
     curve.transition().duration(500).attr('d',line)
     
@@ -336,6 +338,18 @@ histogram = (@opts = {}) ->
     
     frequencies.exit().remove()
   
+  distribution_displayed = true
+  point_group.classed('toggleWithDistribution',true)
+  svg.selectAll('.yaxisgroup').classed('toggleWithDistribution',true)
+    
+  @toggleDistributions = () ->
+    if distribution_displayed == true
+      svg.selectAll('.toggleWithDistribution').attr("style","visibility:hidden")
+      distribution_displayed = false
+    else
+      svg.selectAll('.toggleWithDistribution').attr("style","visibility:visible")
+      distribution_displayed = true
+  
   this
 
 scatterplot = (@opts = {}) ->
@@ -451,8 +465,7 @@ scatterplot = (@opts = {}) ->
       .attr('x1', 0)
       .attr('x2', that.opts.width)
       .attr('y1', y(that.opts.y_property(d)))
-      .attr('y2', y(that.opts.y_property(d)))
-  
+      .attr('y2', y(that.opts.y_property(d)))  
   
   rect = null
   selection_label = null
@@ -667,10 +680,10 @@ setup = () ->
     d3.select("#stopButton").on('click',() -> stop(); return false)
     d3.select("#clearButton").on('click',() -> clear(); return false)
     d3.select("#defaultsButton").on('click',() -> clear(); setToDefaults(); return false)
+    d3.select("#toggleDistributions").on('click',() -> clear(); toggleDistributions(); return false)
     
     # Set up the green lines to indicate calculated median
     histogram.prototype.distributionUpdated = () ->
-      console.log distributions()
       stop()
       worker = new Worker('../js/calculation.js')
       worker.onmessage = (event) ->
@@ -690,12 +703,17 @@ setToDefaults = () ->
       chart.drawDistributionLine()
       chart.allow_distribution_to_be_altered()
 
+toggleDistributions = () ->
+  for own name, chart of charts
+    if chart.toggleDistributions?
+      chart.toggleDistributions()
+
 medians = () ->
   parameters = {}
   for own name, chart of charts
     if chart.opts.mean? && chart.opts.standard_deviation?
       parameters[name] = { mean: chart.opts.mean, sd: 0 }
-  parameters  
+  parameters
 
 distributions = () ->
   parameters = {}
