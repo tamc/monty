@@ -192,6 +192,8 @@ histogram = (@opts = {}) ->
         .attr('class','distribution')
     
     curve.transition().duration(500).attr('d',line)
+    
+    that.distributionUpdated() if that.distributionUpdated?
   
   @showMedianForDatum = (d) ->
     mean = svg.selectAll('line.median')
@@ -656,14 +658,6 @@ setup = () ->
     charts['public_spend'] = new histogram(tag: "#publicSpend", x_axis_title: "Public expenditure £bn", x_max: 5, property: (d) -> d.publicSpend)
     charts['public_spend_against_energy'] = new scatterplot(tag: '#spendEnergyDelivered', x_axis_title: "Public expenditure £bn", y_axis_title: "Energy delivered TWh", x_max: 5, y_max: 50, x_property: ((d) -> d.publicSpend), y_property: ((d) -> d.energyDelivered))
     charts['energy_per_public_spend_against_public_spend'] = new scatterplot(tag:'#energyPerPoundAgainstPounds', x_axis_title:"Public expenditure £", y_axis_title:"Energy per pound of public spend MWh/£", x_max:5, y_max: 20, x_property:((d) -> d.publicSpend), y_property:((d) -> (d.energyDelivered / d.publicSpend)))
-    
-    # Set default distributions
-    for own name, values of defaults
-      chart = charts[name]
-      chart.opts.mean = values.mean
-      chart.opts.standard_deviation = values.sd
-      chart.drawDistributionLine()
-      chart.allow_distribution_to_be_altered()
       
     # Set up the controls
     d3.select("#oneRun").on('click',() -> start(1); return false)
@@ -672,6 +666,7 @@ setup = () ->
     d3.select("#fiveHundredRuns").on('click',() -> start(500); return false)
     d3.select("#stopButton").on('click',() -> stop(); return false)
     d3.select("#clearButton").on('click',() -> clear(); return false)
+    d3.select("#defaultsButton").on('click',() -> clear(); setToDefaults(); return false)
     
     # Set up the green lines to indicate calculated median
     histogram.prototype.distributionUpdated = () ->
@@ -679,12 +674,21 @@ setup = () ->
       stop()
       worker = new Worker('../js/calculation.js')
       worker.onmessage = (event) ->
-        console.log event.data
         for own name, chart of charts  
           chart.showMedianForDatum(event.data)
       worker.postMessage(starting_id: 1, number_of_iterations: 1, distributions: medians());
     
-    charts['capital_cost'].distributionUpdated()
+    setToDefaults()
+
+setToDefaults = () ->
+  # Set default distributions for the charts
+  for own name, values of defaults
+    chart = charts[name]
+    if chart?
+      chart.opts.mean = values.mean
+      chart.opts.standard_deviation = values.sd
+      chart.drawDistributionLine()
+      chart.allow_distribution_to_be_altered()
 
 medians = () ->
   parameters = {}

@@ -1,4 +1,4 @@
-var charts, clear, cumulativeNormal, defaults, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, medians, normalZ, probability_in_bin, running, scatterplot, setup, start, stop, worker;
+var charts, clear, cumulativeNormal, defaults, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, medians, normalZ, probability_in_bin, running, scatterplot, setToDefaults, setup, start, stop, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 normalZ = function(x, mean, standard_deviation) {
   var a;
@@ -135,7 +135,10 @@ histogram = function(opts) {
     });
     curve = svg.selectAll('path.distribution').data([points]);
     curve.enter().append('svg:path').attr('class', 'distribution');
-    return curve.transition().duration(500).attr('d', line);
+    curve.transition().duration(500).attr('d', line);
+    if (that.distributionUpdated != null) {
+      return that.distributionUpdated();
+    }
   };
   this.showMedianForDatum = function(d) {
     var mean;
@@ -469,7 +472,6 @@ iterations = [];
 running = false;
 worker = null;
 setup = function() {
-  var chart, name, values;
   charts['subsidy'] = new histogram({
     tag: '#subsidy',
     x_axis_title: "Subsidy (£/MWh)",
@@ -608,15 +610,6 @@ setup = function() {
       return d.energyDelivered / d.publicSpend;
     })
   });
-  for (name in defaults) {
-    if (!__hasProp.call(defaults, name)) continue;
-    values = defaults[name];
-    chart = charts[name];
-    chart.opts.mean = values.mean;
-    chart.opts.standard_deviation = values.sd;
-    chart.drawDistributionLine();
-    chart.allow_distribution_to_be_altered();
-  }
   d3.select("#oneRun").on('click', function() {
     start(1);
     return false;
@@ -641,13 +634,17 @@ setup = function() {
     clear();
     return false;
   });
+  d3.select("#defaultsButton").on('click', function() {
+    clear();
+    setToDefaults();
+    return false;
+  });
   histogram.prototype.distributionUpdated = function() {
     console.log(distributions());
     stop();
     worker = new Worker('../js/calculation.js');
     worker.onmessage = function(event) {
       var chart, name, _results;
-      console.log(event.data);
       _results = [];
       for (name in charts) {
         if (!__hasProp.call(charts, name)) continue;
@@ -662,7 +659,18 @@ setup = function() {
       distributions: medians()
     });
   };
-  return charts['capital_cost'].distributionUpdated();
+  return setToDefaults();
+};
+setToDefaults = function() {
+  var chart, name, values, _results;
+  _results = [];
+  for (name in defaults) {
+    if (!__hasProp.call(defaults, name)) continue;
+    values = defaults[name];
+    chart = charts[name];
+    _results.push(chart != null ? (chart.opts.mean = values.mean, chart.opts.standard_deviation = values.sd, chart.drawDistributionLine(), chart.allow_distribution_to_be_altered()) : void 0);
+  }
+  return _results;
 };
 medians = function() {
   var chart, name, parameters;
