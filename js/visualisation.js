@@ -1,4 +1,4 @@
-var charts, clear, cumulativeNormal, defaults, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, medians, normalZ, probability_in_bin, running, scatterplot, setToDefaults, setup, start, stop, toggleDistributions, worker;
+var charts, clear, cumulativeNormal, defaults, distributionUpdated, distributions, erf, histogram, inverse_probability_in_mean_bin, iterations, medians, normalZ, probability_in_bin, running, scatterplot, setToDefaults, setup, start, stop, toggleDistributions, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 normalZ = function(x, mean, standard_deviation) {
   var a;
@@ -657,26 +657,28 @@ setup = function() {
     toggleDistributions();
     return false;
   });
-  histogram.prototype.distributionUpdated = function() {
-    stop();
-    worker = new Worker('../js/calculation.js');
-    worker.onmessage = function(event) {
-      var chart, name, _results;
-      _results = [];
-      for (name in charts) {
-        if (!__hasProp.call(charts, name)) continue;
-        chart = charts[name];
-        _results.push(chart.showMedianForDatum(event.data));
-      }
-      return _results;
-    };
-    return worker.postMessage({
-      starting_id: 1,
-      number_of_iterations: 1,
-      distributions: medians()
-    });
+  setToDefaults();
+  histogram.prototype.distributionUpdated = distributionUpdated;
+  return distributionUpdated();
+};
+distributionUpdated = function() {
+  stop();
+  worker = new Worker('../js/calculation.js');
+  worker.onmessage = function(event) {
+    var chart, name, _results;
+    _results = [];
+    for (name in charts) {
+      if (!__hasProp.call(charts, name)) continue;
+      chart = charts[name];
+      _results.push(chart.showMedianForDatum(event.data));
+    }
+    return _results;
   };
-  return setToDefaults();
+  return worker.postMessage({
+    starting_id: 1,
+    number_of_iterations: 1,
+    distributions: medians()
+  });
 };
 setToDefaults = function() {
   var chart, name, values, _results;
@@ -707,8 +709,8 @@ medians = function() {
     chart = charts[name];
     if ((chart.opts.mean != null) && (chart.opts.standard_deviation != null)) {
       parameters[name] = {
-        mean: chart.opts.mean,
-        sd: 0
+        distribution: 'fixed',
+        value: chart.opts.mean
       };
     }
   }
@@ -722,6 +724,7 @@ distributions = function() {
     chart = charts[name];
     if ((chart.opts.mean != null) && (chart.opts.standard_deviation != null)) {
       parameters[name] = {
+        distribution: 'normal',
         mean: chart.opts.mean,
         sd: chart.opts.standard_deviation
       };

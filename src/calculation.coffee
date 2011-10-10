@@ -1,5 +1,9 @@
-# Utility functions
-randomNormalValue = () ->
+# Utility functions for different distributions
+
+fixedValue = (value) ->
+  value.value
+
+randomNormalValueMean0Sd1 = () ->
   # A poor man's approximation!
   # (Math.random()*2-1)+(Math.random()*2-1)+(Math.random()*2-1)
   # Polar Box-Muller
@@ -13,8 +17,14 @@ randomNormalValue = () ->
    y2 = x2 * s
    y1
   
-randomValue = (mean,standard_deviation) ->
-  (randomNormalValue() * standard_deviation) + mean
+randomNormalValue = (value) ->
+  (randomNormalValueMean0Sd1() * value.sd) + value.mean
+
+
+distributionFunctions = {
+  'fixed'  : fixedValue
+  'normal' : randomNormalValue
+}
 
 # The computation
 iteration = (@id,@distributions) ->
@@ -24,7 +34,7 @@ iteration = (@id,@distributions) ->
   #   hurdle_rate: {meain:100, sd: 10}
   # }
   for own key, value of distributions
-    @[key] = randomValue(value.mean,value.sd)
+    @[key] = distributionFunctions[value.distribution](value)
   
   # Can't allow anything less than zero
   for own key, value of this

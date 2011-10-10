@@ -1,6 +1,9 @@
-var iteration, randomNormalValue, randomValue;
+var distributionFunctions, fixedValue, iteration, randomNormalValue, randomNormalValueMean0Sd1;
 var __hasProp = Object.prototype.hasOwnProperty;
-randomNormalValue = function() {
+fixedValue = function(value) {
+  return value.value;
+};
+randomNormalValueMean0Sd1 = function() {
   var r, s, x1, x2, y1, y2;
   while (r >= 1.0 || r === void 0) {
     x1 = 2.0 * Math.random() - 1.0;
@@ -12,8 +15,12 @@ randomNormalValue = function() {
   y2 = x2 * s;
   return y1;
 };
-randomValue = function(mean, standard_deviation) {
-  return (randomNormalValue() * standard_deviation) + mean;
+randomNormalValue = function(value) {
+  return (randomNormalValueMean0Sd1() * value.sd) + value.mean;
+};
+distributionFunctions = {
+  'fixed': fixedValue,
+  'normal': randomNormalValue
 };
 iteration = function(id, distributions) {
   var key, value;
@@ -22,7 +29,7 @@ iteration = function(id, distributions) {
   for (key in distributions) {
     if (!__hasProp.call(distributions, key)) continue;
     value = distributions[key];
-    this[key] = randomValue(value.mean, value.sd);
+    this[key] = distributionFunctions[value.distribution](value);
   }
   for (key in this) {
     if (!__hasProp.call(this, key)) continue;

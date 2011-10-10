@@ -681,18 +681,23 @@ setup = () ->
     d3.select("#clearButton").on('click',() -> clear(); return false)
     d3.select("#defaultsButton").on('click',() -> clear(); setToDefaults(); return false)
     d3.select("#toggleDistributions").on('click',() -> clear(); toggleDistributions(); return false)
+
+    setToDefaults()
     
     # Set up the green lines to indicate calculated median
-    histogram.prototype.distributionUpdated = () ->
-      stop()
-      worker = new Worker('../js/calculation.js')
-      worker.onmessage = (event) ->
-        for own name, chart of charts  
-          chart.showMedianForDatum(event.data)
-      worker.postMessage(starting_id: 1, number_of_iterations: 1, distributions: medians());
+    histogram.prototype.distributionUpdated = distributionUpdated
     
-    setToDefaults()
-
+    distributionUpdated()
+    
+    
+distributionUpdated = () ->
+  stop()
+  worker = new Worker('../js/calculation.js')
+  worker.onmessage = (event) ->
+    for own name, chart of charts  
+      chart.showMedianForDatum(event.data)
+  worker.postMessage(starting_id: 1, number_of_iterations: 1, distributions: medians());
+    
 setToDefaults = () ->
   # Set default distributions for the charts
   for own name, values of defaults
@@ -712,14 +717,14 @@ medians = () ->
   parameters = {}
   for own name, chart of charts
     if chart.opts.mean? && chart.opts.standard_deviation?
-      parameters[name] = { mean: chart.opts.mean, sd: 0 }
-  parameters
+      parameters[name] = { distribution: 'fixed', value: chart.opts.mean }
+  parameters  
 
 distributions = () ->
   parameters = {}
   for own name, chart of charts
     if chart.opts.mean? && chart.opts.standard_deviation?
-      parameters[name] = { mean: chart.opts.mean, sd: chart.opts.standard_deviation }
+      parameters[name] = { distribution: 'normal', mean: chart.opts.mean, sd: chart.opts.standard_deviation }
   parameters
     
 stop = () ->
