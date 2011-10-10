@@ -400,7 +400,7 @@ histogram.defaults = {
   x_axis_suffix: "",
   x_axis_title: null,
   y_axis_suffix: "%",
-  y_axis_title: "Proportion over 500 runs"
+  y_axis_title: "Proportion over 500 attempts"
 };
 scatterplot.defaults = {
   tag: "body",
