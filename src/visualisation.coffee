@@ -209,7 +209,13 @@ histogram = (@opts = {}) ->
       .attr('x2', x(that.opts.property(d)))
       .attr('y1', 0)
       .attr('y2', that.opts.height)
-      
+  
+  @distribution = () ->
+    if @opts.mean? && @opts.standard_deviation?
+      {distribution: 'normal', mean: @opts.mean, sd:@opts.standard_deviation}
+    else
+      {}
+    
   rect = null
   selection_label = null
   x0 = 0
@@ -636,16 +642,16 @@ scatterplot.defaults =
   y_axis_title: null
 
 defaults = { 
-  "subsidy": {"mean":100,"sd":0}
-  "capital_cost":{"mean":3700,"sd":(3700-2900)},
-  "operating_cost":{"mean":78,"sd":(78-64)},
-  "fuel_cost":{"mean":0,"sd":0},
-  "efficiency":{"mean":95,"sd":2},
-  "availability":{"mean":86,"sd":4},
-  "economic_life":{"mean":60,"sd":10},
-  "hurdle_rate":{"mean":10,"sd":3},
-  "capital_available":{"mean":5,"sd":1},
-  "price":{"mean":50,"sd":10}
+  "subsidy": {distribution: 'normal', "mean":100,"sd":0}
+  "capital_cost":{distribution: 'normal', "mean":3700,"sd":(3700-2900)},
+  "operating_cost":{distribution: 'normal', "mean":78,"sd":(78-64)},
+  "fuel_cost":{distribution: 'normal', "mean":0,"sd":0},
+  "efficiency":{distribution: 'normal', "mean":95,"sd":2},
+  "availability":{distribution: 'normal', "mean":86,"sd":4},
+  "economic_life":{distribution: 'normal', "mean":60,"sd":10},
+  "hurdle_rate":{distribution: 'normal', "mean":10,"sd":3},
+  "capital_available":{distribution: 'normal', "mean":5,"sd":1},
+  "price":{distribution: 'normal', "mean":50,"sd":10}
 }
 
 charts = {}
@@ -658,7 +664,7 @@ setup = () ->
     charts['subsidy'] = new histogram(tag:'#subsidy', x_axis_title:"Subsidy (£/MWh)", x_max: 400, property: (d) -> d.subsidy)
     charts['capital_cost'] = new histogram(tag:'#capital', x_axis_title:"Capital cost (£/kW)", x_max: 7500, property: (d) -> d.capital_cost)
     charts['operating_cost'] = new histogram(tag:"#operating", x_axis_title:"Operating cost (£/kW/yr)", property: (d) -> d.operating_cost)
-    charts['fuel_cost'] = new histogram(tag:"#fuel",x_axis_title:"Fuel cost (£/MWh)", property: (d) -> d.fuel_cost)
+#    charts['fuel_cost'] = new histogram(tag:"#fuel",x_axis_title:"Fuel cost (£/MWh)", property: (d) -> d.fuel_cost)
     charts['efficiency'] = new histogram(tag:"#efficiency", x_axis_title:"Efficiency", x_axis_suffix: "%", x_max: 100, property:(d) -> d.efficiency)
     charts['availability'] = new histogram(tag:"#availability", x_axis_title:"Availability or capacity factor (% of hours operating)", x_axis_suffix:"%", x_max: 100,property:(d) -> d.availability)
     charts['economic_life'] = new histogram(tag:"#life", x_axis_title:"Economic life (years)", x_max: 100, property:(d) -> d.economic_life)
@@ -715,16 +721,23 @@ toggleDistributions = () ->
 
 medians = () ->
   parameters = {}
-  for own name, chart of charts
-    if chart.opts.mean? && chart.opts.standard_deviation?
+  for own name, defaultDistribution of defaults
+    chart = charts[name]
+    if chart?
       parameters[name] = { distribution: 'fixed', value: chart.opts.mean }
+    else
+      parameters[name] = defaultDistribution
   parameters  
 
 distributions = () ->
   parameters = {}
-  for own name, chart of charts
-    if chart.opts.mean? && chart.opts.standard_deviation?
-      parameters[name] = { distribution: 'normal', mean: chart.opts.mean, sd: chart.opts.standard_deviation }
+  for own name, defaultDistribution of defaults
+    chart = charts[name]
+    if chart?
+      parameters[name] = chart.distribution()
+    else
+      parameters[name] = defaultDistribution
+  console.log parameters
   parameters
     
 stop = () ->

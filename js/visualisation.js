@@ -147,6 +147,17 @@ histogram = function(opts) {
     mean.enter().append('svg:line').attr('class', 'median');
     return mean.transition().duration(500).attr('x1', x(that.opts.property(d))).attr('x2', x(that.opts.property(d))).attr('y1', 0).attr('y2', that.opts.height);
   };
+  this.distribution = function() {
+    if ((this.opts.mean != null) && (this.opts.standard_deviation != null)) {
+      return {
+        distribution: 'normal',
+        mean: this.opts.mean,
+        sd: this.opts.standard_deviation
+      };
+    } else {
+      return {};
+    }
+  };
   rect = null;
   selection_label = null;
   x0 = 0;
@@ -440,42 +451,52 @@ scatterplot.defaults = {
 };
 defaults = {
   "subsidy": {
+    distribution: 'normal',
     "mean": 100,
     "sd": 0
   },
   "capital_cost": {
+    distribution: 'normal',
     "mean": 3700,
     "sd": 3700 - 2900
   },
   "operating_cost": {
+    distribution: 'normal',
     "mean": 78,
     "sd": 78 - 64
   },
   "fuel_cost": {
+    distribution: 'normal',
     "mean": 0,
     "sd": 0
   },
   "efficiency": {
+    distribution: 'normal',
     "mean": 95,
     "sd": 2
   },
   "availability": {
+    distribution: 'normal',
     "mean": 86,
     "sd": 4
   },
   "economic_life": {
+    distribution: 'normal',
     "mean": 60,
     "sd": 10
   },
   "hurdle_rate": {
+    distribution: 'normal',
     "mean": 10,
     "sd": 3
   },
   "capital_available": {
+    distribution: 'normal',
     "mean": 5,
     "sd": 1
   },
   "price": {
+    distribution: 'normal',
     "mean": 50,
     "sd": 10
   }
@@ -506,13 +527,6 @@ setup = function() {
     x_axis_title: "Operating cost (£/kW/yr)",
     property: function(d) {
       return d.operating_cost;
-    }
-  });
-  charts['fuel_cost'] = new histogram({
-    tag: "#fuel",
-    x_axis_title: "Fuel cost (£/MWh)",
-    property: function(d) {
-      return d.fuel_cost;
     }
   });
   charts['efficiency'] = new histogram({
@@ -702,34 +716,37 @@ toggleDistributions = function() {
   return _results;
 };
 medians = function() {
-  var chart, name, parameters;
+  var chart, defaultDistribution, name, parameters;
   parameters = {};
-  for (name in charts) {
-    if (!__hasProp.call(charts, name)) continue;
+  for (name in defaults) {
+    if (!__hasProp.call(defaults, name)) continue;
+    defaultDistribution = defaults[name];
     chart = charts[name];
-    if ((chart.opts.mean != null) && (chart.opts.standard_deviation != null)) {
+    if (chart != null) {
       parameters[name] = {
         distribution: 'fixed',
         value: chart.opts.mean
       };
+    } else {
+      parameters[name] = defaultDistribution;
     }
   }
   return parameters;
 };
 distributions = function() {
-  var chart, name, parameters;
+  var chart, defaultDistribution, name, parameters;
   parameters = {};
-  for (name in charts) {
-    if (!__hasProp.call(charts, name)) continue;
+  for (name in defaults) {
+    if (!__hasProp.call(defaults, name)) continue;
+    defaultDistribution = defaults[name];
     chart = charts[name];
-    if ((chart.opts.mean != null) && (chart.opts.standard_deviation != null)) {
-      parameters[name] = {
-        distribution: 'normal',
-        mean: chart.opts.mean,
-        sd: chart.opts.standard_deviation
-      };
+    if (chart != null) {
+      parameters[name] = chart.distribution();
+    } else {
+      parameters[name] = defaultDistribution;
     }
   }
+  console.log(parameters);
   return parameters;
 };
 stop = function() {
