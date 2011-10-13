@@ -1,4 +1,4 @@
-var charts, clear, defaults, distributionUpdated, distributions, iterations, medians, running, setToDefaults, setup, start, stop, toggleDistributions, worker;
+var charts, clear, defaults, distributionUpdated, distributions, irr, iterations, medians, npv, running, setToDefaults, setup, start, stop, toggleDistributions, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 histogram.defaults = {
   tag: "body",
@@ -91,12 +91,12 @@ defaults = {
   "availability": {
     distribution: 'normal',
     "mean": 30,
-    "sd": 7
+    "sd": 4
   },
   "economic_life": {
     distribution: 'normal',
     "mean": 25,
-    "sd": 7
+    "sd": 4
   },
   "hurdle_rate": {
     distribution: 'normal',
@@ -106,7 +106,7 @@ defaults = {
   "capital_available": {
     distribution: 'normal',
     "mean": 17,
-    "sd": 5
+    "sd": 2
   },
   "price": {
     distribution: 'normal',
@@ -368,4 +368,32 @@ clear = function() {
     chart.clear();
   }
   return d3.select("#message}").text("");
+};
+irr = function(initial_outlay, annual_profit, years) {
+  var attempts, next_r, npv_last, npv_this, r, r_last;
+  r = 0.1;
+  r_last = -0.1;
+  npv_last = npv(initial_outlay, annual_profit, years, r_last);
+  attempts = 0;
+  while (Math.abs(r - r_last) > 0.00001) {
+    if (attempts > 10) {
+      break;
+    }
+    attempts++;
+    npv_this = npv(initial_outlay, annual_profit, years, r);
+    next_r = r - npv_this * ((r - r_last) / (npv_this - npv_last));
+    r_last = r;
+    npv_last = npv_this;
+    r = next_r;
+  }
+  return r;
+};
+npv = function(initial_outlay, annual_profit, years, discount_rate) {
+  var discounted_annual_profit, profit, year;
+  profit = -initial_outlay;
+  for (year = 1; 1 <= years ? year <= years : year >= years; 1 <= years ? year++ : year--) {
+    discounted_annual_profit = annual_profit / Math.pow(1 + discount_rate, year);
+    profit = profit + discounted_annual_profit;
+  }
+  return profit;
 };

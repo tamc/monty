@@ -26,12 +26,35 @@ distributionFunctions = {
   'normal' : randomNormalValue
 }
 
+irr = (initial_outlay,annual_profit,years) ->
+  r = 0.1
+  r_last = -0.1
+  npv_last = npv(initial_outlay,annual_profit,years,r_last)
+  attempts = 0
+  while Math.abs(r-r_last) > 0.00001
+    break if attempts > 10
+    attempts++
+    npv_this = npv(initial_outlay,annual_profit,years,r)
+    next_r = r - npv_this * ((r - r_last) / (npv_this - npv_last))
+    r_last = r
+    npv_last = npv_this
+    r = next_r
+  r
+    
+npv = (initial_outlay,annual_profit,years,discount_rate) ->
+  profit = -initial_outlay
+  for year in [1..years]
+    discounted_annual_profit = (annual_profit/Math.pow(1+discount_rate,year))
+    profit = profit + discounted_annual_profit
+  profit
+  
+
 # The computation
 deployment = (@id,@distributions) ->
   # Expects distribution of the form
   # { 
   #   capital_cost: {mean: 100, sd: 10 },
-  #   hurdle_rate: {meain:100, sd: 10}
+  #   hurdle_rate: {mean:100, sd: 10}
   # }
   for own key, value of distributions
     @[key] = distributionFunctions[value.distribution](value)
@@ -50,8 +73,18 @@ deployment = (@id,@distributions) ->
   @cost_per_MWh = @annualCost / @annualOutput
   @annualIncome = @annualOutput * ( @price + @subsidy )
   @profit = @annualIncome - @annualCost
-  if @profit > 0
-    @deployment = (@capital_available * 1e9 / @capital_cost) / 1000 # Deployment in MW
+  @internal_rate_of_return = irr(@capital_cost,@profit + @annualCapitalCost,@economic_life) * 100
+  if (@internal_rate_of_return - @hurdle_rate) < 0
+    # Investment falls rapidly to zero
+    @actual_capital_available = @capital_available *  ((@internal_rate_of_return - @hurdle_rate)/4)
+    @actual_capital_available = 0 if @actual_capital_available < 0
+  else
+    # Investment increases gently
+    @capital_scale_factor = ((@internal_rate_of_return - @hurdle_rate)/30.0)
+    @capital_scale_factor = 1 if @capital_scale_factor > 1
+    @actual_capital_available = @capital_available + (3 * @capital_scale_factor) 
+  if @actual_capital_available > 0
+    @deployment = (@actual_capital_available * 1e9 / @capital_cost) / 1000 # Deployment in MW
     @energy_delivered = @deployment * @annualOutput / 1000 # Energy delivered in TWh
     @public_spend = @energy_delivered * @subsidy / 1000
     @total_profit = @profit * @deployment / 1000000

@@ -127,31 +127,4 @@ distributions = () ->
       parameters[name] = chart.distribution()
     else
       parameters[name] = defaultDistribution
-  console.log parameters
   parameters
-
-stop = () ->
-  return unless running == true
-  running = false
-  worker.terminate()
-
-start = (number_of_iterations = 500) ->  
-  stop()
-  d3.selectAll("rect.selected").classed('selected',false)
-  worker = new Worker('../js/inverse-calculation.js')
-  running = true
-  worker.onmessage = (event) ->
-    iterations.push(event.data)
-    for own name, chart of charts
-      chart.update(iterations) 
-    d3.select("#message}").text("#{iterations.length} runs completed")
-  worker.onerror = (error) ->  
-    console.log("Calculation error: " + error.message + "\n")
-    throw error
-  worker.postMessage(starting_id: iterations.length, number_of_iterations: number_of_iterations, distributions: distributions());
-
-clear = () ->
-  stop()
-  iterations = []
-  chart.clear() for own name,chart of charts
-  d3.select("#message}").text("")

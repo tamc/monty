@@ -183,6 +183,7 @@ setup = function() {
   charts['total_profit'] = new slider({
     tag: "#totalProfit",
     x_axis_title: "Private 'excess' profit £bn",
+    x_min: -1,
     x_max: 7,
     width: 500,
     property: function(d) {
@@ -198,6 +199,7 @@ distributionUpdated = function() {
   worker = new Worker('../js/calculation.js');
   worker.onmessage = function(event) {
     var chart, name, _results;
+    console.log(event.data);
     _results = [];
     for (name in charts) {
       if (!__hasProp.call(charts, name)) continue;

@@ -61,10 +61,10 @@ defaults = {
   "operating_cost":{distribution: 'normal', "mean":132,"sd":(132-81)/2},
   "fuel_cost": {distribution: 'fixed', "value": 0 }
   "efficiency": {distribution: 'fixed', "value": 100 }
-  "availability": {distribution: 'normal', "mean":30,"sd":7},
-  "economic_life":{distribution: 'normal', "mean":25,"sd":7},
+  "availability": {distribution: 'normal', "mean":30,"sd":4},
+  "economic_life":{distribution: 'normal', "mean":25,"sd":4},
   "hurdle_rate":{distribution: 'normal', "mean":13,"sd":2},
-  "capital_available":{distribution: 'normal', "mean":17,"sd":5},
+  "capital_available":{distribution: 'normal', "mean":17,"sd":2},
   "price":{distribution: 'normal', "mean":71,"sd":(71-41)/3}
 }
 
@@ -183,3 +183,25 @@ clear = () ->
   iterations = []
   chart.clear() for own name,chart of charts
   d3.select("#message}").text("")
+  
+irr = (initial_outlay,annual_profit,years) ->
+  r = 0.1
+  r_last = -0.1
+  npv_last = npv(initial_outlay,annual_profit,years,r_last)
+  attempts = 0
+  while Math.abs(r-r_last) > 0.00001
+    break if attempts > 10
+    attempts++
+    npv_this = npv(initial_outlay,annual_profit,years,r)
+    next_r = r - npv_this * ((r - r_last) / (npv_this - npv_last))
+    r_last = r
+    npv_last = npv_this
+    r = next_r
+  r
+
+npv = (initial_outlay,annual_profit,years,discount_rate) ->
+  profit = -initial_outlay
+  for year in [1..years]
+    discounted_annual_profit = (annual_profit/Math.pow(1+discount_rate,year))
+    profit = profit + discounted_annual_profit
+  profit

@@ -1,4 +1,4 @@
-var charts, clear, defaults, distributionUpdated, distributions, iteration, medians, running, setToDefaults, setup, start, stop, worker;
+var charts, defaults, distributionUpdated, distributions, iteration, medians, running, setToDefaults, setup, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
 slider.defaults = {
   tag: "body",
@@ -265,52 +265,5 @@ distributions = function() {
       parameters[name] = defaultDistribution;
     }
   }
-  console.log(parameters);
   return parameters;
-};
-stop = function() {
-  if (running !== true) {
-    return;
-  }
-  running = false;
-  return worker.terminate();
-};
-start = function(number_of_iterations) {
-  if (number_of_iterations == null) {
-    number_of_iterations = 500;
-  }
-  stop();
-  d3.selectAll("rect.selected").classed('selected', false);
-  worker = new Worker('../js/inverse-calculation.js');
-  running = true;
-  worker.onmessage = function(event) {
-    var chart, name;
-    iterations.push(event.data);
-    for (name in charts) {
-      if (!__hasProp.call(charts, name)) continue;
-      chart = charts[name];
-      chart.update(iterations);
-    }
-    return d3.select("#message}").text("" + iterations.length + " runs completed");
-  };
-  worker.onerror = function(error) {
-    console.log("Calculation error: " + error.message + "\n");
-    throw error;
-  };
-  return worker.postMessage({
-    starting_id: iterations.length,
-    number_of_iterations: number_of_iterations,
-    distributions: distributions()
-  });
-};
-clear = function() {
-  var chart, iterations, name;
-  stop();
-  iterations = [];
-  for (name in charts) {
-    if (!__hasProp.call(charts, name)) continue;
-    chart = charts[name];
-    chart.clear();
-  }
-  return d3.select("#message}").text("");
 };

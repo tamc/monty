@@ -71,7 +71,7 @@ setup = () ->
   
   charts['energy_delivered'] = new slider(tag: "#energyDelivered", x_axis_title: "Energy delivered TWh", x_max:70, width: 500, property: (d) -> d.energy_delivered)
   charts['public_spend'] = new slider(tag: "#publicSpend", x_axis_title: "Public expenditure £bn", x_max: 7, width: 500, property: (d) -> d.public_spend)
-  charts['total_profit'] = new slider(tag: "#totalProfit", x_axis_title: "Private 'excess' profit £bn", x_max: 7, width: 500, property: (d) -> d.total_profit)
+  charts['total_profit'] = new slider(tag: "#totalProfit", x_axis_title: "Private 'excess' profit £bn", x_min: -1, x_max: 7, width: 500, property: (d) -> d.total_profit)
 
 
   # charts['public_spend_against_energy'] = new scatterplot(tag: '#spendEnergyDelivered', x_axis_title: "Public expenditure £bn", y_axis_title: "Energy delivered TWh", x_max: 10, y_max: 100, x_property: ((d) -> d.publicSpend), y_property: ((d) -> d.energyDelivered))
@@ -87,6 +87,7 @@ distributionUpdated = () ->
   stop()
   worker = new Worker('../js/calculation.js')
   worker.onmessage = (event) ->
+    console.log event.data
     for own name, chart of charts  
       chart.showMedianForDatum(event.data)
   worker.postMessage(starting_id: 1, number_of_iterations: 1, distributions: medians());

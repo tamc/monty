@@ -1,4 +1,4 @@
-var deployment, distributionFunctions, fixedValue, randomNormalValue, randomNormalValueMean0Sd1;
+var deployment, distributionFunctions, fixedValue, irr, npv, randomNormalValue, randomNormalValueMean0Sd1;
 var __hasProp = Object.prototype.hasOwnProperty;
 fixedValue = function(value) {
   return value.value;
@@ -21,6 +21,34 @@ randomNormalValue = function(value) {
 distributionFunctions = {
   'fixed': fixedValue,
   'normal': randomNormalValue
+};
+irr = function(initial_outlay, annual_profit, years) {
+  var attempts, next_r, npv_last, npv_this, r, r_last;
+  r = 0.1;
+  r_last = -0.1;
+  npv_last = npv(initial_outlay, annual_profit, years, r_last);
+  attempts = 0;
+  while (Math.abs(r - r_last) > 0.00001) {
+    if (attempts > 10) {
+      break;
+    }
+    attempts++;
+    npv_this = npv(initial_outlay, annual_profit, years, r);
+    next_r = r - npv_this * ((r - r_last) / (npv_this - npv_last));
+    r_last = r;
+    npv_last = npv_this;
+    r = next_r;
+  }
+  return r;
+};
+npv = function(initial_outlay, annual_profit, years, discount_rate) {
+  var discounted_annual_profit, profit, year;
+  profit = -initial_outlay;
+  for (year = 1; 1 <= years ? year <= years : year >= years; 1 <= years ? year++ : year--) {
+    discounted_annual_profit = annual_profit / Math.pow(1 + discount_rate, year);
+    profit = profit + discounted_annual_profit;
+  }
+  return profit;
 };
 deployment = function(id, distributions) {
   var key, value;
@@ -50,8 +78,21 @@ deployment = function(id, distributions) {
   this.cost_per_MWh = this.annualCost / this.annualOutput;
   this.annualIncome = this.annualOutput * (this.price + this.subsidy);
   this.profit = this.annualIncome - this.annualCost;
-  if (this.profit > 0) {
-    this.deployment = (this.capital_available * 1e9 / this.capital_cost) / 1000;
+  this.internal_rate_of_return = irr(this.capital_cost, this.profit + this.annualCapitalCost, this.economic_life) * 100;
+  if ((this.internal_rate_of_return - this.hurdle_rate) < 0) {
+    this.actual_capital_available = this.capital_available * ((this.internal_rate_of_return - this.hurdle_rate) / 4);
+    if (this.actual_capital_available < 0) {
+      this.actual_capital_available = 0;
+    }
+  } else {
+    this.capital_scale_factor = (this.internal_rate_of_return - this.hurdle_rate) / 30.0;
+    if (this.capital_scale_factor > 1) {
+      this.capital_scale_factor = 1;
+    }
+    this.actual_capital_available = this.capital_available + (3 * this.capital_scale_factor);
+  }
+  if (this.actual_capital_available > 0) {
+    this.deployment = (this.actual_capital_available * 1e9 / this.capital_cost) / 1000;
     this.energy_delivered = this.deployment * this.annualOutput / 1000;
     this.public_spend = this.energy_delivered * this.subsidy / 1000;
     this.total_profit = this.profit * this.deployment / 1000000;
