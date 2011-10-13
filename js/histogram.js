@@ -1,7 +1,7 @@
 var histogram;
 var __hasProp = Object.prototype.hasOwnProperty;
 histogram = function(opts) {
-  var block_height, block_width, click_rect, count, distribution_displayed, distribution_move, empty, iteration_to_id, key, nesting_operator, point_group, rect, selecting, selection_label, selection_mousedown, selection_mousemove, selection_mouseup, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x0, x1, x_step, xrule, y, y_axis_group, yrule, _ref;
+  var block_height, block_mouseout, block_mouseover, block_width, click_rect, count, distribution_displayed, distribution_move, empty, iteration_to_id, key, nesting_operator, point_group, rect, selecting, selection_label, selection_mousedown, selection_mousemove, selection_mouseup, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x0, x1, x_step, xrule, y, y_axis_group, yrule, _ref;
   this.opts = opts != null ? opts : {};
   _ref = histogram.defaults;
   for (key in _ref) {
@@ -124,6 +124,7 @@ histogram = function(opts) {
       return;
     }
     selecting = true;
+    svg.selectAll('rect.block').attr('pointer-events', 'none');
     d3.selectAll(".selection").remove();
     x0 = d3.svg.mouse(this);
     count = 0;
@@ -166,12 +167,21 @@ histogram = function(opts) {
     if (count === 0) {
       rect.remove();
       rect = null;
+      svg.selectAll('rect.block').attr('pointer-events', 'all');
       selection_label.remove();
       selection_label = null;
       return d3.selectAll("rect.selected").classed("selected", false).style("fill", "grey");
     }
   };
   click_rect.on('mousedown.selection', selection_mousedown).on('mousemove.selection', selection_mousemove).on('mouseup.selection', selection_mouseup).on('mouseout.selection', selection_mouseup);
+  block_mouseover = function(d) {
+    console.log("In " + d.id);
+    return d3.selectAll(".block" + d.id).style("fill", "yellow").classed('selected', true);
+  };
+  block_mouseout = function(d) {
+    console.log("Out " + d.id);
+    return d3.selectAll(".block" + d.id).style("fill", "grey").classed('selected', false);
+  };
   values_to_ids = function(d) {
     return d.key;
   };
@@ -201,7 +211,7 @@ histogram = function(opts) {
       return "block block" + d.id;
     }).attr("y", function(d, i) {
       return that.opts.height - ((i + 1) * block_height);
-    }).attr("width", block_width).attr("height", block_height).style("fill", "yellow").transition().duration(1000).style("fill", "grey");
+    }).attr("width", block_width).attr("height", block_height).style("fill", "yellow").on('mouseover', block_mouseover).on('mouseout', block_mouseout).transition().duration(1000).style("fill", "grey");
     return frequencies.exit().remove();
   };
   distribution_displayed = true;

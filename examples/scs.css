@@ -38,6 +38,7 @@ rect {
 rect.block {
   fill: #aaa;
   stroke: none;
+  pointer-events: all;  
 }
 
 rect.selected, rect.stickySelected {
@@ -84,13 +85,19 @@ div.histogram h2 {
 }
 
 div#inputs {
+  margin: 0;
+  padding: 0;
   width: 500px;
   float: left;
+  text-align: center;
 }
 
 div#outputs {
+  margin: 0;
+  padding: 0;
   width: 500px;
   float: right;
+  text-align: center;
 }
 
 td.value {
@@ -103,9 +110,9 @@ tr#publicSpend td, tr#target td {
 
 div#controls {
   height: 15px;
-  color: #ccc;
+  color: #aaa;
 }
 
 div#controls a {
-  color: #ccc;
+  color: #aaa;
 }

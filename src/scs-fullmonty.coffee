@@ -10,7 +10,7 @@ histogram.defaults =
   x_ticks:  10
   y_ticks:  5
   property: (d) -> d
-  attempts: 500
+  attempts: 20
   bins:     50
   title:    null
   x_axis_suffix: ""

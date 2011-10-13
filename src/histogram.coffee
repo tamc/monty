@@ -173,6 +173,7 @@ histogram = (@opts = {}) ->
     return if empty
     return if selecting
     selecting = true
+    svg.selectAll('rect.block').attr('pointer-events','none')
     d3.selectAll(".selection").remove()
     x0 = d3.svg.mouse(this);
     count = 0;
@@ -236,6 +237,7 @@ histogram = (@opts = {}) ->
     if count == 0
       rect.remove()
       rect = null
+      svg.selectAll('rect.block').attr('pointer-events','all')
       selection_label.remove()
       selection_label = null
       d3.selectAll("rect.selected").classed("selected",false).style("fill", "grey")
@@ -245,6 +247,14 @@ histogram = (@opts = {}) ->
     .on('mousemove.selection',selection_mousemove)  
     .on('mouseup.selection',selection_mouseup)    
     .on('mouseout.selection',selection_mouseup)    
+  
+  block_mouseover = (d) ->
+    console.log "In #{d.id}"
+    d3.selectAll(".block" + d.id).style("fill", "yellow").classed('selected',true)
+      
+  block_mouseout = (d) ->
+    console.log "Out #{d.id}"
+    d3.selectAll(".block" + d.id).style("fill", "grey").classed('selected',false)
   
   values_to_ids = (d) -> d.key
   values_to_frequencies = (d) -> d.values
@@ -284,6 +294,8 @@ histogram = (@opts = {}) ->
         .attr("width",block_width)
         .attr("height",block_height)
         .style("fill", "yellow")
+        .on('mouseover',block_mouseover)
+        .on('mouseout',block_mouseout)        
         .transition()
           .duration(1000)
           .style("fill", "grey");

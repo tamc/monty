@@ -14,7 +14,7 @@ histogram.defaults = {
   property: function(d) {
     return d;
   },
-  attempts: 500,
+  attempts: 20,
   bins: 50,
   title: null,
   x_axis_suffix: "",
