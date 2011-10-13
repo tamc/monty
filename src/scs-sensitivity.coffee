@@ -1,6 +1,6 @@
 slider.defaults =
   tag:      "body"
-  width:    250
+  width:    350
   height:   125
   padding:  35
   x_min:    0
@@ -46,7 +46,9 @@ defaults = {
   "economic_life":{distribution: 'normal', "mean":25,"sd":7},
   "hurdle_rate":{distribution: 'normal', "mean":13,"sd":2},
   "capital_available":{distribution: 'normal', "mean":17,"sd":5},
-  "price":{distribution: 'normal', "mean":71,"sd":(71-41)/3}
+  "price":{distribution: 'normal', "mean":71,"sd":(71-41)/3},
+  "capital_falloff":{distribution: 'normal', 'mean':(17/4),"sd":1},
+  "capital_rampup":{distribution: 'normal', 'mean':(5/20),"sd":1}  
 }
 
 charts = {}
@@ -58,20 +60,25 @@ setup = () ->
   charts = {}
   
   # Create the charts
-  charts['subsidy'] = new slider(tag:'#subsidy', x_axis_title:"Level of subsidy (£/MWh)", x_max: 200, property: (d) -> d.subsidy)
-  
-  charts['capital_cost'] = new slider(tag:'#capital', x_axis_title:"Capital cost (£/kW)", x_max: 7500, property: (d) -> d.capital_cost)
-  charts['operating_cost'] = new slider(tag:"#operating", x_axis_title:"Operating cost (£/kW/yr)", property: (d) -> d.operating_cost)
+  charts['subsidy'] = new slider(tag:'#subsidy', x_axis_title:"Level of subsidy £/MWh", x_max: 200, property: (d) -> d.subsidy)
+
+  charts['capital_cost'] = new slider(tag:'#capital', x_axis_title:"Capital cost £/kW", x_max: 7500, property: (d) -> d.capital_cost)
+  charts['operating_cost'] = new slider(tag:"#operating", x_axis_title:"Operating cost £/kW/yr", property: (d) -> d.operating_cost)
 #    charts['fuel_cost'] = new slider(tag:"#fuel",x_axis_title:"Fuel cost (£/MWh)", property: (d) -> d.fuel_cost)
-  charts['availability'] = new slider(tag:"#availability", x_axis_title:"Capacity factor (% of peak output that are actually delivered)", x_axis_suffix:"%", x_max: 100,property:(d) -> d.availability)
-  charts['economic_life'] = new slider(tag:"#life", x_axis_title:"Economic life (years)", x_max: 100, property:(d) -> d.economic_life)
-  charts['hurdle_rate'] = new slider(tag:"#hurdle", x_axis_title:"Investor's hurdle rate (apr)", x_axis_suffix: "%", x_max: 20, property:(d) -> d.hurdle_rate)
-  charts['capital_available'] = new slider(tag: "#quantity", x_axis_title:"Investor's capital available £bn", x_max: 50, property:(d) -> d.capital_available)
-  charts['price'] = new slider(tag: "#price", x_axis_title:"Price of electricity £/MWh", property:(d) -> d.price)   
+  charts['availability'] = new slider(tag:"#availability", x_axis_title:"Average output, % of peak", x_axis_suffix:"%", x_max: 100,property:(d) -> d.availability)
+  charts['economic_life'] = new slider(tag:"#life", x_axis_title:"Economic life, years", x_max: 100, property:(d) -> d.economic_life)
   
-  charts['energy_delivered'] = new slider(tag: "#energyDelivered", x_axis_title: "Energy delivered TWh", x_max:70, width: 500, property: (d) -> d.energy_delivered)
-  charts['public_spend'] = new slider(tag: "#publicSpend", x_axis_title: "Public expenditure £bn", x_max: 7, width: 500, property: (d) -> d.public_spend)
-  charts['total_profit'] = new slider(tag: "#totalProfit", x_axis_title: "Private 'excess' profit £bn", x_min: -1, x_max: 7, width: 500, property: (d) -> d.total_profit)
+  charts['hurdle_rate'] = new slider(tag:"#hurdle", x_axis_title:"Investor's hurdle rate, %", x_axis_suffix: "%", x_max: 20, property:(d) -> d.hurdle_rate)
+  charts['capital_available'] = new slider(tag: "#quantity", x_axis_title:"Capital available at hurdle rate £bn", x_max: 50, property:(d) -> d.capital_available)
+  charts['capital_falloff'] = new slider(tag: "#falloff", x_axis_title:"Fall in capital per pp fall in IRR, £bn", x_max: 10, property:(d) -> d.capital_falloff)
+  charts['capital_rampup'] = new slider(tag: "#rampup", x_axis_title:"Increase in capital per pp increase in IRR, £bn", x_max: 10, property:(d) -> d.capital_rampup)
+  
+  charts['price'] = new slider(tag: "#price", x_axis_title:"Price of electricity £/MWh", property:(d) -> d.price)   
+  charts['energy_delivered'] = new slider(tag: "#energyDelivered", x_axis_title: "Energy delivered TWh", x_max:70, property: (d) -> d.energy_delivered)
+  charts['public_spend'] = new slider(tag: "#publicSpend", x_axis_title: "Public expenditure £bn", x_max: 7, property: (d) -> d.public_spend)
+  charts['total_profit'] = new slider(tag: "#totalProfit", x_axis_title: "Private 'excess' profit £bn", x_max: 7,  property: (d) -> d.total_profit)
+
+  charts['internal_rate_of_return'] = new slider(tag: "#irr", x_axis_title: "IRR", x_max: 100, property: (d) -> d.internal_rate_of_return)
 
 
   # charts['public_spend_against_energy'] = new scatterplot(tag: '#spendEnergyDelivered', x_axis_title: "Public expenditure £bn", y_axis_title: "Energy delivered TWh", x_max: 10, y_max: 100, x_property: ((d) -> d.publicSpend), y_property: ((d) -> d.energyDelivered))

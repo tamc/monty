@@ -2,7 +2,7 @@ var charts, defaults, distributionUpdated, distributions, iteration, medians, ru
 var __hasProp = Object.prototype.hasOwnProperty;
 slider.defaults = {
   tag: "body",
-  width: 250,
+  width: 350,
   height: 125,
   padding: 35,
   x_min: 0,
@@ -99,7 +99,7 @@ setup = function() {
   charts = {};
   charts['subsidy'] = new slider({
     tag: '#subsidy',
-    x_axis_title: "Level of subsidy (£/MWh)",
+    x_axis_title: "Level of subsidy £/MWh",
     x_max: 200,
     property: function(d) {
       return d.subsidy;
@@ -107,7 +107,7 @@ setup = function() {
   });
   charts['capital_cost'] = new slider({
     tag: '#capital',
-    x_axis_title: "Capital cost (£/kW)",
+    x_axis_title: "Capital cost £/kW",
     x_max: 7500,
     property: function(d) {
       return d.capital_cost;
@@ -115,14 +115,14 @@ setup = function() {
   });
   charts['operating_cost'] = new slider({
     tag: "#operating",
-    x_axis_title: "Operating cost (£/kW/yr)",
+    x_axis_title: "Operating cost £/kW/yr",
     property: function(d) {
       return d.operating_cost;
     }
   });
   charts['availability'] = new slider({
     tag: "#availability",
-    x_axis_title: "Capacity factor (% of peak output that are actually delivered)",
+    x_axis_title: "Average output, % of peak",
     x_axis_suffix: "%",
     x_max: 100,
     property: function(d) {
@@ -131,7 +131,7 @@ setup = function() {
   });
   charts['economic_life'] = new slider({
     tag: "#life",
-    x_axis_title: "Economic life (years)",
+    x_axis_title: "Economic life, years",
     x_max: 100,
     property: function(d) {
       return d.economic_life;
@@ -139,7 +139,7 @@ setup = function() {
   });
   charts['hurdle_rate'] = new slider({
     tag: "#hurdle",
-    x_axis_title: "Investor's hurdle rate (apr)",
+    x_axis_title: "Investor's hurdle rate, %",
     x_axis_suffix: "%",
     x_max: 20,
     property: function(d) {
@@ -148,7 +148,7 @@ setup = function() {
   });
   charts['capital_available'] = new slider({
     tag: "#quantity",
-    x_axis_title: "Investor's capital available £bn",
+    x_axis_title: "Capital available at hurdle rate £bn",
     x_max: 50,
     property: function(d) {
       return d.capital_available;
@@ -165,7 +165,6 @@ setup = function() {
     tag: "#energyDelivered",
     x_axis_title: "Energy delivered TWh",
     x_max: 70,
-    width: 500,
     property: function(d) {
       return d.energy_delivered;
     }
@@ -174,7 +173,6 @@ setup = function() {
     tag: "#publicSpend",
     x_axis_title: "Public expenditure £bn",
     x_max: 7,
-    width: 500,
     property: function(d) {
       return d.public_spend;
     }
@@ -183,9 +181,16 @@ setup = function() {
     tag: "#totalProfit",
     x_axis_title: "Private 'excess' profit £bn",
     x_max: 7,
-    width: 500,
     property: function(d) {
       return d.total_profit;
+    }
+  });
+  charts['internal_rate_of_return'] = new slider({
+    tag: "#irr",
+    x_axis_title: "IRR",
+    x_max: 100,
+    property: function(d) {
+      return d.internal_rate_of_return;
     }
   });
   setToDefaults();

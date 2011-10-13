@@ -25,7 +25,7 @@ slider = function(opts) {
     return x.tickFormat(that.opts.x_ticks)(d) + that.opts.x_axis_suffix;
   });
   if (this.opts.x_axis_title != null) {
-    svg.append("svg:text").attr("x", this.opts.width / 2).attr("y", this.opts.height + 18).attr("dy", ".71em").attr("text-anchor", "middle").text(this.opts.x_axis_title);
+    svg.append("svg:text").attr('class', 'axislabel').attr("x", this.opts.width / 2).attr("y", this.opts.height + 18).attr("dy", ".71em").attr("text-anchor", "middle").text(this.opts.x_axis_title);
   }
   distribution_move = function(d) {
     var m;

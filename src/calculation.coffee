@@ -75,14 +75,12 @@ deployment = (@id,@distributions) ->
   @profit = @annualIncome - @annualCost
   @internal_rate_of_return = irr(@capital_cost,@profit + @annualCapitalCost,@economic_life) * 100
   if (@internal_rate_of_return - @hurdle_rate) < 0
-    # Investment falls rapidly to zero
-    @actual_capital_available = @capital_available *  ((@internal_rate_of_return - @hurdle_rate)/4)
+    # Investment falls towards zero
+    @actual_capital_available = @capital_available *  (@capital_falloff * (@internal_rate_of_return - @hurdle_rate))
     @actual_capital_available = 0 if @actual_capital_available < 0
   else
-    # Investment increases gently
-    @capital_scale_factor = ((@internal_rate_of_return - @hurdle_rate)/30.0)
-    @capital_scale_factor = 1 if @capital_scale_factor > 1
-    @actual_capital_available = @capital_available + (3 * @capital_scale_factor) 
+    # Investment increases
+    @actual_capital_available = @capital_available +  (@capital_rampup * (@internal_rate_of_return - @hurdle_rate))
   if @actual_capital_available > 0
     @deployment = (@actual_capital_available * 1e9 / @capital_cost) / 1000 # Deployment in MW
     @energy_delivered = @deployment * @annualOutput / 1000 # Energy delivered in TWh

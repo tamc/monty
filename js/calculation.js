@@ -80,16 +80,12 @@ deployment = function(id, distributions) {
   this.profit = this.annualIncome - this.annualCost;
   this.internal_rate_of_return = irr(this.capital_cost, this.profit + this.annualCapitalCost, this.economic_life) * 100;
   if ((this.internal_rate_of_return - this.hurdle_rate) < 0) {
-    this.actual_capital_available = this.capital_available * ((this.internal_rate_of_return - this.hurdle_rate) / 4);
+    this.actual_capital_available = this.capital_available * (this.capital_falloff * (this.internal_rate_of_return - this.hurdle_rate));
     if (this.actual_capital_available < 0) {
       this.actual_capital_available = 0;
     }
   } else {
-    this.capital_scale_factor = (this.internal_rate_of_return - this.hurdle_rate) / 30.0;
-    if (this.capital_scale_factor > 1) {
-      this.capital_scale_factor = 1;
-    }
-    this.actual_capital_available = this.capital_available + (3 * this.capital_scale_factor);
+    this.actual_capital_available = this.capital_available + (this.capital_rampup * (this.internal_rate_of_return - this.hurdle_rate));
   }
   if (this.actual_capital_available > 0) {
     this.deployment = (this.actual_capital_available * 1e9 / this.capital_cost) / 1000;

@@ -2,7 +2,7 @@ var charts, clear, defaults, distributionUpdated, distributions, irr, iterations
 var __hasProp = Object.prototype.hasOwnProperty;
 histogram.defaults = {
   tag: "body",
-  width: 250,
+  width: 350,
   height: 125,
   padding: 35,
   x_min: 0,
@@ -112,6 +112,16 @@ defaults = {
     distribution: 'normal',
     "mean": 71,
     "sd": (71 - 41) / 3
+  },
+  "capital_falloff": {
+    distribution: 'normal',
+    'mean': 17 / 4,
+    "sd": 1
+  },
+  "capital_rampup": {
+    distribution: 'normal',
+    'mean': 5 / 20,
+    "sd": 1
   }
 };
 charts = {};
@@ -121,7 +131,7 @@ worker = null;
 setup = function() {
   charts['subsidy'] = new histogram({
     tag: '#subsidy',
-    x_axis_title: "Level of subsidy (£/MWh)",
+    x_axis_title: "Level of subsidy £/MWh",
     x_max: 200,
     property: function(d) {
       return d.subsidy;
@@ -129,7 +139,7 @@ setup = function() {
   });
   charts['capital_cost'] = new histogram({
     tag: '#capital',
-    x_axis_title: "Capital cost (£/kW)",
+    x_axis_title: "Capital cost £/kW",
     x_max: 7500,
     property: function(d) {
       return d.capital_cost;
@@ -137,14 +147,14 @@ setup = function() {
   });
   charts['operating_cost'] = new histogram({
     tag: "#operating",
-    x_axis_title: "Operating cost (£/kW/yr)",
+    x_axis_title: "Operating cost £/kW/yr",
     property: function(d) {
       return d.operating_cost;
     }
   });
   charts['availability'] = new histogram({
     tag: "#availability",
-    x_axis_title: "Capacity factor (% of peak output that are actually delivered)",
+    x_axis_title: "Average output, % of peak",
     x_axis_suffix: "%",
     x_max: 100,
     property: function(d) {
@@ -153,7 +163,7 @@ setup = function() {
   });
   charts['economic_life'] = new histogram({
     tag: "#life",
-    x_axis_title: "Economic life (years)",
+    x_axis_title: "Economic life, years",
     x_max: 100,
     property: function(d) {
       return d.economic_life;
@@ -161,7 +171,7 @@ setup = function() {
   });
   charts['hurdle_rate'] = new histogram({
     tag: "#hurdle",
-    x_axis_title: "Investor's hurdle rate (apr)",
+    x_axis_title: "Investor's hurdle rate, %",
     x_axis_suffix: "%",
     x_max: 20,
     property: function(d) {
@@ -170,10 +180,26 @@ setup = function() {
   });
   charts['capital_available'] = new histogram({
     tag: "#quantity",
-    x_axis_title: "Investor's capital available £bn",
+    x_axis_title: "Capital available at hurdle rate £bn",
     x_max: 50,
     property: function(d) {
       return d.capital_available;
+    }
+  });
+  charts['capital_falloff'] = new histogram({
+    tag: "#falloff",
+    x_axis_title: "Fall in capital per pp fall in IRR, £bn",
+    x_max: 10,
+    property: function(d) {
+      return d.capital_falloff;
+    }
+  });
+  charts['capital_rampup'] = new histogram({
+    tag: "#rampup",
+    x_axis_title: "Increase in capital per pp increase in IRR, £bn",
+    x_max: 10,
+    property: function(d) {
+      return d.capital_rampup;
     }
   });
   charts['price'] = new histogram({
@@ -187,7 +213,6 @@ setup = function() {
     tag: "#energyDelivered",
     x_axis_title: "Energy delivered TWh",
     x_max: 70,
-    width: 500,
     property: function(d) {
       return d.energy_delivered;
     }
@@ -196,7 +221,6 @@ setup = function() {
     tag: "#publicSpend",
     x_axis_title: "Public expenditure £bn",
     x_max: 7,
-    width: 500,
     property: function(d) {
       return d.public_spend;
     }
@@ -205,9 +229,16 @@ setup = function() {
     tag: "#totalProfit",
     x_axis_title: "Private 'excess' profit £bn",
     x_max: 7,
-    width: 500,
     property: function(d) {
       return d.total_profit;
+    }
+  });
+  charts['internal_rate_of_return'] = new histogram({
+    tag: "#irr",
+    x_axis_title: "IRR",
+    x_max: 100,
+    property: function(d) {
+      return d.internal_rate_of_return;
     }
   });
   d3.select("#oneRun").on('click', function() {

@@ -53,6 +53,7 @@ slider = (@opts = {}) ->
   # x-axis title
   if @opts.x_axis_title?    
     svg.append("svg:text")
+      .attr('class','axislabel')
       .attr("x",@opts.width/2)
       .attr("y", @opts.height + 18)
       .attr("dy", ".71em")

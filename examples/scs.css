@@ -1,15 +1,11 @@
 body {
-  font: 16px sans-serif;
+  font: 10px sans-serif;
 }
 
 h2 {
   width: 100%;
   text-align: center;
   margin-bottom: 0;
-}
-
-svg {
-  font: 10px sans-serif;
 }
 
 g.main {
@@ -41,12 +37,12 @@ rect {
 
 rect.block {
   fill: #aaa;
-  stroke: #999;
+  stroke: none;
 }
 
 rect.selected, rect.stickySelected {
-  stroke: #aa0;
-  fill: #FF0;
+  stroke: none;
+  fill: #F00;
 }
 
 line.selected {
@@ -69,6 +65,10 @@ line.median, line.xmedian, line.ymedian {
   stroke-width: 2;
 }
 
+text.axislabel {
+  font-size: 12pt;
+}
+
 div.chartGroup {
   clear: both;
 }
@@ -84,12 +84,12 @@ div.histogram h2 {
 }
 
 div#inputs {
-  width: 300px;
+  width: 500px;
   float: left;
 }
 
 div#outputs {
-  width: 600px;
+  width: 500px;
   float: right;
 }
 
