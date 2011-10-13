@@ -159,7 +159,7 @@ setup = function() {
     x_axis_title: "Energy delivered TWh",
     x_max: 70,
     width: 500,
-    height: 250,
+    height: 200,
     property: function(d) {
       return d.energyDelivered;
     }
@@ -169,9 +169,19 @@ setup = function() {
     x_axis_title: "Public expenditure £bn",
     x_max: 7,
     width: 500,
-    height: 250,
+    height: 125,
     property: function(d) {
       return d.publicSpend;
+    }
+  });
+  charts['total_profit'] = new slider({
+    tag: "#totalProfit",
+    x_axis_title: "Private 'excess' profit £bn",
+    x_max: 7,
+    width: 500,
+    height: 125,
+    property: function(d) {
+      return d.totalProfit;
     }
   });
   setToDefaults();

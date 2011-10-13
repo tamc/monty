@@ -54,10 +54,12 @@ deployment = function(id, distributions) {
     this.deployment = (this.capital_available * 1e9 / this.capital_cost) / 1000;
     this.energyDelivered = this.deployment * this.annualOutput / 1000;
     this.publicSpend = this.energyDelivered * this.subsidy / 1000;
+    this.totalProfit = this.profit * this.deployment / 1000000;
   } else {
     this.deployment = 0;
     this.energyDelivered = 0;
     this.publicSpend = 0;
+    this.totalProfit = 0;
   }
   return this;
 };

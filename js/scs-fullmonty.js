@@ -160,7 +160,7 @@ setup = function() {
     x_axis_title: "Energy delivered TWh",
     x_max: 70,
     width: 500,
-    height: 250,
+    height: 125,
     property: function(d) {
       return d.energyDelivered;
     }
@@ -170,23 +170,20 @@ setup = function() {
     x_axis_title: "Public expenditure £bn",
     x_max: 7,
     width: 500,
-    height: 250,
+    height: 125,
     property: function(d) {
       return d.publicSpend;
     }
   });
-  charts['public_spend_against_energy'] = new scatterplot({
-    tag: '#spendEnergyDelivered',
-    x_axis_title: "Public expenditure £bn",
-    y_axis_title: "Energy delivered TWh",
-    x_max: 10,
-    y_max: 100,
-    x_property: (function(d) {
-      return d.publicSpend;
-    }),
-    y_property: (function(d) {
-      return d.energyDelivered;
-    })
+  charts['total_profit'] = new histogram({
+    tag: "#totalProfit",
+    x_axis_title: "Private 'excess' profit £bn",
+    x_max: 7,
+    width: 500,
+    height: 125,
+    property: function(d) {
+      return d.totalProfit;
+    }
   });
   d3.select("#oneRun").on('click', function() {
     start(1);

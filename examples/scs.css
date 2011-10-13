@@ -2,6 +2,12 @@ body {
   font: 16px sans-serif;
 }
 
+h2 {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 0;
+}
+
 svg {
   font: 10px sans-serif;
 }
@@ -92,6 +98,7 @@ tr#publicSpend td, tr#target td {
 
 div#controls {
   height: 15px;
+  color: #ccc;
 }
 
 div#controls a {
