@@ -1,16 +1,16 @@
-var charts, clear, defaults, distributionUpdated, distributions, iterations, medians, running, setToDefaults, setup, start, stop, toggleDistributions, worker;
+var charts, clear, defaults, distributionUpdated, distributions, iteration, medians, running, setToDefaults, setup, start, stop, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
-histogram.defaults = {
+slider.defaults = {
   tag: "body",
   width: 250,
-  height: 250,
+  height: 125,
   padding: 35,
   x_min: 0,
   x_max: 300,
   y_min: 0,
   y_max: 20,
   x_ticks: 10,
-  y_ticks: 10,
+  y_ticks: 5,
   property: function(d) {
     return d;
   },
@@ -18,14 +18,12 @@ histogram.defaults = {
   bins: 50,
   title: null,
   x_axis_suffix: "",
-  x_axis_title: null,
-  y_axis_suffix: "%",
-  y_axis_title: "Proportion over 500 attempts"
+  x_axis_title: null
 };
 scatterplot.defaults = {
   tag: "body",
-  width: 250,
-  height: 250,
+  width: 500,
+  height: 500,
   padding: 35,
   x_min: 0,
   x_max: 300,
@@ -47,70 +45,60 @@ scatterplot.defaults = {
 };
 defaults = {
   "subsidy": {
-    distribution: 'normal',
-    "mean": 100,
-    "sd": 0
+    distribution: 'fixed',
+    "value": 94
   },
   "capital_cost": {
     distribution: 'normal',
-    "mean": 3700,
-    "sd": 3700 - 2900
+    "mean": 2211,
+    "sd": 2211 - 1756
   },
   "operating_cost": {
     distribution: 'normal',
-    "mean": 78,
-    "sd": 78 - 64
+    "mean": 132,
+    "sd": (132 - 81) / 2
   },
   "fuel_cost": {
-    distribution: 'normal',
-    "mean": 0,
-    "sd": 0
+    distribution: 'fixed',
+    "value": 0
   },
   "efficiency": {
-    distribution: 'normal',
-    "mean": 95,
-    "sd": 2
+    distribution: 'fixed',
+    "value": 100
   },
   "availability": {
     distribution: 'normal',
-    "mean": 86,
-    "sd": 4
+    "mean": 30,
+    "sd": 7
   },
   "economic_life": {
     distribution: 'normal',
-    "mean": 60,
-    "sd": 10
+    "mean": 25,
+    "sd": 7
   },
   "hurdle_rate": {
     distribution: 'normal',
-    "mean": 10,
-    "sd": 3
+    "mean": 13,
+    "sd": 2
   },
   "capital_available": {
     distribution: 'normal',
-    "mean": 5,
-    "sd": 1
+    "mean": 17,
+    "sd": 5
   },
   "price": {
     distribution: 'normal',
-    "mean": 50,
-    "sd": 10
+    "mean": 71,
+    "sd": (71 - 41) / 3
   }
 };
 charts = {};
-iterations = [];
+iteration = [];
 running = false;
 worker = null;
 setup = function() {
-  charts['subsidy'] = new histogram({
-    tag: '#subsidy',
-    x_axis_title: "Subsidy (£/MWh)",
-    x_max: 400,
-    property: function(d) {
-      return d.subsidy;
-    }
-  });
-  charts['capital_cost'] = new histogram({
+  charts = {};
+  charts['capital_cost'] = new slider({
     tag: '#capital',
     x_axis_title: "Capital cost (£/kW)",
     x_max: 7500,
@@ -118,32 +106,23 @@ setup = function() {
       return d.capital_cost;
     }
   });
-  charts['operating_cost'] = new histogram({
+  charts['operating_cost'] = new slider({
     tag: "#operating",
     x_axis_title: "Operating cost (£/kW/yr)",
     property: function(d) {
       return d.operating_cost;
     }
   });
-  charts['efficiency'] = new histogram({
-    tag: "#efficiency",
-    x_axis_title: "Efficiency",
-    x_axis_suffix: "%",
-    x_max: 100,
-    property: function(d) {
-      return d.efficiency;
-    }
-  });
-  charts['availability'] = new histogram({
+  charts['availability'] = new slider({
     tag: "#availability",
-    x_axis_title: "Availability or capacity factor (% of hours operating)",
+    x_axis_title: "Capacity factor (% of peak output that are actually delivered)",
     x_axis_suffix: "%",
     x_max: 100,
     property: function(d) {
       return d.availability;
     }
   });
-  charts['economic_life'] = new histogram({
+  charts['economic_life'] = new slider({
     tag: "#life",
     x_axis_title: "Economic life (years)",
     x_max: 100,
@@ -151,7 +130,7 @@ setup = function() {
       return d.economic_life;
     }
   });
-  charts['hurdle_rate'] = new histogram({
+  charts['hurdle_rate'] = new slider({
     tag: "#hurdle",
     x_axis_title: "Investor's hurdle rate (apr)",
     x_axis_suffix: "%",
@@ -160,115 +139,43 @@ setup = function() {
       return d.hurdle_rate;
     }
   });
-  charts['capital_available'] = new histogram({
+  charts['capital_available'] = new slider({
     tag: "#quantity",
     x_axis_title: "Investor's capital available £bn",
-    x_max: 10,
+    x_max: 50,
     property: function(d) {
       return d.capital_available;
     }
   });
-  charts['cost_per_MWh'] = new histogram({
-    tag: "#annualcost",
-    x_axis_title: "Cost £/MWh",
-    x_max: 300,
-    property: function(d) {
-      return d.cost_per_MWh;
-    }
-  });
-  charts['price'] = new histogram({
+  charts['price'] = new slider({
     tag: "#price",
     x_axis_title: "Price of electricity £/MWh",
     property: function(d) {
       return d.price;
     }
   });
-  charts['deployment'] = new histogram({
-    tag: "#deployment",
-    x_axis_title: "Quantity deployed MW",
-    x_max: 3000,
-    property: function(d) {
-      return d.deployment;
-    }
-  });
-  charts['energy_delivered'] = new histogram({
+  charts['energy_delivered'] = new slider({
     tag: "#energyDelivered",
     x_axis_title: "Energy delivered TWh",
-    x_max: 50,
+    x_max: 70,
+    width: 500,
+    height: 250,
     property: function(d) {
       return d.energyDelivered;
     }
   });
-  charts['public_spend'] = new histogram({
+  charts['public_spend'] = new slider({
     tag: "#publicSpend",
     x_axis_title: "Public expenditure £bn",
-    x_max: 5,
+    x_max: 7,
+    width: 500,
+    height: 250,
     property: function(d) {
       return d.publicSpend;
     }
   });
-  charts['public_spend_against_energy'] = new scatterplot({
-    tag: '#spendEnergyDelivered',
-    x_axis_title: "Public expenditure £bn",
-    y_axis_title: "Energy delivered TWh",
-    x_max: 5,
-    y_max: 50,
-    x_property: (function(d) {
-      return d.publicSpend;
-    }),
-    y_property: (function(d) {
-      return d.energyDelivered;
-    })
-  });
-  charts['energy_per_public_spend_against_public_spend'] = new scatterplot({
-    tag: '#energyPerPoundAgainstPounds',
-    x_axis_title: "Public expenditure £",
-    y_axis_title: "Energy per pound of public spend MWh/£",
-    x_max: 5,
-    y_max: 20,
-    x_property: (function(d) {
-      return d.publicSpend;
-    }),
-    y_property: (function(d) {
-      return d.energyDelivered / d.publicSpend;
-    })
-  });
-  d3.select("#oneRun").on('click', function() {
-    start(1);
-    return false;
-  });
-  d3.select("#tenRuns").on('click', function() {
-    start(10);
-    return false;
-  });
-  d3.select("#hundredRuns").on('click', function() {
-    start(100);
-    return false;
-  });
-  d3.select("#fiveHundredRuns").on('click', function() {
-    start(500);
-    return false;
-  });
-  d3.select("#stopButton").on('click', function() {
-    stop();
-    return false;
-  });
-  d3.select("#clearButton").on('click', function() {
-    clear();
-    return false;
-  });
-  d3.select("#defaultsButton").on('click', function() {
-    clear();
-    setToDefaults();
-    return false;
-  });
-  d3.select("#toggleDistributions").on('click', function() {
-    clear();
-    toggleDistributions();
-    return false;
-  });
   setToDefaults();
-  histogram.prototype.distributionUpdated = distributionUpdated;
+  slider.prototype.distributionUpdated = distributionUpdated;
   return distributionUpdated();
 };
 distributionUpdated = function() {
@@ -276,6 +183,8 @@ distributionUpdated = function() {
   worker = new Worker('../js/calculation.js');
   worker.onmessage = function(event) {
     var chart, name, _results;
+    console.log("Calculated results");
+    console.log(event.data);
     _results = [];
     for (name in charts) {
       if (!__hasProp.call(charts, name)) continue;
@@ -301,16 +210,6 @@ setToDefaults = function() {
   }
   return _results;
 };
-toggleDistributions = function() {
-  var chart, name, _results;
-  _results = [];
-  for (name in charts) {
-    if (!__hasProp.call(charts, name)) continue;
-    chart = charts[name];
-    _results.push(chart.toggleDistributions != null ? chart.toggleDistributions() : void 0);
-  }
-  return _results;
-};
 medians = function() {
   var chart, defaultDistribution, name, parameters;
   parameters = {};
@@ -323,8 +222,16 @@ medians = function() {
         distribution: 'fixed',
         value: chart.opts.mean
       };
-    } else {
-      parameters[name] = defaultDistribution;
+    } else if (defaultDistribution.value != null) {
+      parameters[name] = {
+        distribution: 'fixed',
+        value: defaultDistribution.value
+      };
+    } else if (defaultDistribution.mean != null) {
+      parameters[name] = {
+        distribution: 'fixed',
+        value: defaultDistribution.mean
+      };
     }
   }
   return parameters;
@@ -381,7 +288,7 @@ start = function(number_of_iterations) {
   });
 };
 clear = function() {
-  var chart, name;
+  var chart, iterations, name;
   stop();
   iterations = [];
   for (name in charts) {

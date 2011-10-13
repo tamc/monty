@@ -1,4 +1,4 @@
-var distributionFunctions, fixedValue, iteration, randomNormalValue, randomNormalValueMean0Sd1;
+var deployment, distributionFunctions, fixedValue, randomNormalValue, randomNormalValueMean0Sd1;
 var __hasProp = Object.prototype.hasOwnProperty;
 fixedValue = function(value) {
   return value.value;
@@ -22,7 +22,7 @@ distributionFunctions = {
   'fixed': fixedValue,
   'normal': randomNormalValue
 };
-iteration = function(id, distributions) {
+deployment = function(id, distributions) {
   var key, value;
   this.id = id;
   this.distributions = distributions;
@@ -66,7 +66,7 @@ this.onmessage = function(event) {
   starting_id = event.data.starting_id;
   distributions = event.data.distributions;
   for (i = 1, _ref = event.data.number_of_iterations; 1 <= _ref ? i <= _ref : i >= _ref; 1 <= _ref ? i++ : i--) {
-    this.postMessage(new iteration(i + starting_id, distributions));
+    this.postMessage(new deployment(i + starting_id, distributions));
     false;
   }
   return this.close;

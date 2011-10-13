@@ -27,7 +27,7 @@ distributionFunctions = {
 }
 
 # The computation
-iteration = (@id,@distributions) ->
+deployment = (@id,@distributions) ->
   # Expects distribution of the form
   # { 
   #   capital_cost: {mean: 100, sd: 10 },
@@ -65,6 +65,6 @@ iteration = (@id,@distributions) ->
   starting_id = event.data.starting_id
   distributions = event.data.distributions
   for i in [1..event.data.number_of_iterations]
-    @postMessage(new iteration(i+starting_id,distributions))
+    @postMessage(new deployment(i+starting_id,distributions))
     false
   @close

@@ -1,4 +1,8 @@
 body {
+  font: 16px sans-serif;
+}
+
+svg {
   font: 10px sans-serif;
 }
 
@@ -54,12 +58,42 @@ line.median, line.xmedian, line.ymedian {
   stroke-width: 2;
 }
 
+div.chartGroup {
+  clear: both;
+}
+
 div.histogram, div.scatter {
-  float: left;
+  clear: both;
 }
 
 div.histogram h2 {
   padding: 20;
   text-align: center;
   margin-bottom: 0;
+}
+
+div#inputs {
+  width: 300px;
+  float: left;
+}
+
+div#outputs {
+  width: 600px;
+  float: right;
+}
+
+td.value {
+  text-align: right;
+}
+
+tr#publicSpend td, tr#target td {
+  font-weight: bold;
+}
+
+div#controls {
+  height: 15px;
+}
+
+div#controls a {
+  color: #ccc;
 }
