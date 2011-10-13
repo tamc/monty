@@ -109,6 +109,8 @@ tr#publicSpend td, tr#target td {
 }
 
 div#controls {
+  width: 100%;
+  text-align: center;
   height: 15px;
   color: #aaa;
 }
