@@ -72,7 +72,6 @@ slider = (@opts = {}) ->
 
   # Draws a distribution line
   @drawDistributionLine = () ->
-    console.log("Trying to draw distributoin") 
     return unless that.opts.mean?  && that.opts.standard_deviation?
     
     svg.append("svg:line")
@@ -89,9 +88,10 @@ slider = (@opts = {}) ->
         .attr("y1", 0)
         .attr("y2", that.opts.height);
     
-
   @showMedianForDatum = (d) ->
-    
+    @showMedianForValue(that.opts.property(d))
+  
+  @showMedianForValue = (median) ->
     mean = svg.selectAll('line.median')
             .data([1])
 
@@ -99,8 +99,8 @@ slider = (@opts = {}) ->
       .attr('class','median')
 
     mean.transition().duration(500)
-      .attr('x1', x(that.opts.property(d)))
-      .attr('x2', x(that.opts.property(d)))
+      .attr('x1', x(median))
+      .attr('x2', x(median))
       .attr('y1', 0)
       .attr('y2', that.opts.height)
 

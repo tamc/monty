@@ -8,19 +8,12 @@
      <script src="../js/histogram.js" type="text/javascript"></script>
      <script src="../js/scatterplot.js" type="text/javascript"></script>
      <script src="../js/slider.js" type="text/javascript"></script>
-     <script src="../js/scs-fullmonty.js" type="text/javascript"></script>
+     <script src="../js/scs-inverse.js" type="text/javascript"></script>
      <link href="scs.css" media="screen" rel="stylesheet" type="text/css"></link>
   </header>
   <body id="monty" onload="setup()">
     <div id='controls'>
-      <a id='oneRun' href='#'>1 run</a>
-      <a id='tenRuns' href='#'>10 runs</a>
-      <a id='hundredRuns' href='#'>100 runs</a>
-      <a id='fiveHundredRuns' href='#'>500 runs</a>
-      <a id='stopButton' href='#'>Stop</a>    
-      <a id='clearButton' href='#'>Clear</a>
-      <a id='defaultsButton' href='#'>Defaults</a>
-      <a id='toggleDistributions' = href='#'>Hide/Show distributions</a>
+      <a id='calculate' href='#'>Calculate unknowns</a>
       <span id='message'></span>
     </div>    
     <div id='inputs'>
@@ -35,14 +28,11 @@
       <div id='quantity' class='histogram'></div>      
     </div>
     <div id='outputs'>
-      <h2>Consequences</h2>
-    <!-- <div id='annualincome' class='histogram'></div>
-    <div id='profit' class='histogram'></div>
-    <div id='quantity' class='histogram'></div>
-    <div id='deployment' class='histogram'></div> -->
-    <div id='energyDelivered' class='histogram'></div>
-    <div id='publicSpend' class='histogram'></div>
-    <div id='totalProfit' class='histogram'></div>    
-    <div id='spendEnergyDelivered' class='scatter'></div>
+      <h2>Consequences</h2>      
+      <div id='energyDelivered' class='histogram'></div>
+      <div id='publicSpend' class='histogram'></div>
+      <div id='totalProfit' class='histogram'></div>
+      <div id='spendEnergyDelivered' class='scatter'></div>      
+
   </body>
 </html>

@@ -111,7 +111,8 @@ histogram = (@opts = {}) ->
     m = d3.svg.mouse(svg.node())    
     # Translate those coordinates into mean and probability
     that.opts.mean = x.invert(m[0])
-    that.opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1])/100,that.opts.mean, x_step) 
+    if that.opts.standard_deviation
+      that.opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1])/100,that.opts.mean, x_step) 
     that.drawDistributionLine()
     that.distributionUpdated() if that.distributionUpdated?
     d3.event.preventDefault();
@@ -155,6 +156,8 @@ histogram = (@opts = {}) ->
   @distribution = () ->
     if @opts.mean? && @opts.standard_deviation?
       {distribution: 'normal', mean: @opts.mean, sd:@opts.standard_deviation}
+    else if @opts.mean?
+      {distribution: 'fixed', value: @opts.mean}
     else
       {}
     

@@ -53,7 +53,9 @@ histogram = function(opts) {
     }
     m = d3.svg.mouse(svg.node());
     that.opts.mean = x.invert(m[0]);
-    that.opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1]) / 100, that.opts.mean, x_step);
+    if (that.opts.standard_deviation) {
+      that.opts.standard_deviation = inverse_probability_in_mean_bin(y.invert(m[1]) / 100, that.opts.mean, x_step);
+    }
     that.drawDistributionLine();
     if (that.distributionUpdated != null) {
       that.distributionUpdated();
@@ -98,6 +100,11 @@ histogram = function(opts) {
         distribution: 'normal',
         mean: this.opts.mean,
         sd: this.opts.standard_deviation
+      };
+    } else if (this.opts.mean != null) {
+      return {
+        distribution: 'fixed',
+        value: this.opts.mean
       };
     } else {
       return {};

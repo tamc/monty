@@ -1,6 +1,6 @@
-var charts, clear, defaults, distributionUpdated, distributions, iterations, medians, running, setToDefaults, setup, start, stop, toggleDistributions, worker;
+var charts, clear, defaults, distributionUpdated, distributions, iteration, medians, running, setToDefaults, setup, start, stop, worker;
 var __hasProp = Object.prototype.hasOwnProperty;
-histogram.defaults = {
+slider.defaults = {
   tag: "body",
   width: 250,
   height: 125,
@@ -18,9 +18,7 @@ histogram.defaults = {
   bins: 50,
   title: null,
   x_axis_suffix: "",
-  x_axis_title: null,
-  y_axis_suffix: "%",
-  y_axis_title: ""
+  x_axis_title: null
 };
 scatterplot.defaults = {
   tag: "body",
@@ -45,31 +43,7 @@ scatterplot.defaults = {
   y_axis_suffix: "",
   y_axis_title: null
 };
-slider.defaults = {
-  tag: "body",
-  width: 250,
-  height: 125,
-  padding: 35,
-  x_min: 0,
-  x_max: 300,
-  y_min: 0,
-  y_max: 20,
-  x_ticks: 10,
-  y_ticks: 5,
-  property: function(d) {
-    return d;
-  },
-  attempts: 500,
-  bins: 50,
-  title: null,
-  x_axis_suffix: "",
-  x_axis_title: null
-};
 defaults = {
-  "subsidy": {
-    distribution: 'fixed',
-    "value": 94
-  },
   "capital_cost": {
     distribution: 'normal',
     "mean": 2211,
@@ -103,23 +77,27 @@ defaults = {
     "mean": 13,
     "sd": 2
   },
-  "capital_available": {
-    distribution: 'normal',
-    "mean": 17,
-    "sd": 5
-  },
   "price": {
     distribution: 'normal',
     "mean": 71,
     "sd": (71 - 41) / 3
+  },
+  "energy_delivered": {
+    distribution: 'fixed',
+    "value": 20
+  },
+  "total_profit": {
+    distribution: 'fixed',
+    "value": 0
   }
 };
 charts = {};
-iterations = [];
+iteration = [];
 running = false;
 worker = null;
 setup = function() {
-  charts['subsidy'] = new histogram({
+  charts = {};
+  charts['subsidy'] = new slider({
     tag: '#subsidy',
     x_axis_title: "Level of subsidy (£/MWh)",
     x_max: 200,
@@ -127,7 +105,7 @@ setup = function() {
       return d.subsidy;
     }
   });
-  charts['capital_cost'] = new histogram({
+  charts['capital_cost'] = new slider({
     tag: '#capital',
     x_axis_title: "Capital cost (£/kW)",
     x_max: 7500,
@@ -135,14 +113,14 @@ setup = function() {
       return d.capital_cost;
     }
   });
-  charts['operating_cost'] = new histogram({
+  charts['operating_cost'] = new slider({
     tag: "#operating",
     x_axis_title: "Operating cost (£/kW/yr)",
     property: function(d) {
       return d.operating_cost;
     }
   });
-  charts['availability'] = new histogram({
+  charts['availability'] = new slider({
     tag: "#availability",
     x_axis_title: "Capacity factor (% of peak output that are actually delivered)",
     x_axis_suffix: "%",
@@ -151,7 +129,7 @@ setup = function() {
       return d.availability;
     }
   });
-  charts['economic_life'] = new histogram({
+  charts['economic_life'] = new slider({
     tag: "#life",
     x_axis_title: "Economic life (years)",
     x_max: 100,
@@ -159,7 +137,7 @@ setup = function() {
       return d.economic_life;
     }
   });
-  charts['hurdle_rate'] = new histogram({
+  charts['hurdle_rate'] = new slider({
     tag: "#hurdle",
     x_axis_title: "Investor's hurdle rate (apr)",
     x_axis_suffix: "%",
@@ -168,7 +146,7 @@ setup = function() {
       return d.hurdle_rate;
     }
   });
-  charts['capital_available'] = new histogram({
+  charts['capital_available'] = new slider({
     tag: "#quantity",
     x_axis_title: "Investor's capital available £bn",
     x_max: 50,
@@ -176,14 +154,14 @@ setup = function() {
       return d.capital_available;
     }
   });
-  charts['price'] = new histogram({
+  charts['price'] = new slider({
     tag: "#price",
     x_axis_title: "Price of electricity £/MWh",
     property: function(d) {
       return d.price;
     }
   });
-  charts['energy_delivered'] = new histogram({
+  charts['energy_delivered'] = new slider({
     tag: "#energyDelivered",
     x_axis_title: "Energy delivered TWh",
     x_max: 70,
@@ -192,7 +170,7 @@ setup = function() {
       return d.energy_delivered;
     }
   });
-  charts['public_spend'] = new histogram({
+  charts['public_spend'] = new slider({
     tag: "#publicSpend",
     x_axis_title: "Public expenditure £bn",
     x_max: 7,
@@ -201,7 +179,7 @@ setup = function() {
       return d.public_spend;
     }
   });
-  charts['total_profit'] = new histogram({
+  charts['total_profit'] = new slider({
     tag: "#totalProfit",
     x_axis_title: "Private 'excess' profit £bn",
     x_max: 7,
@@ -210,47 +188,16 @@ setup = function() {
       return d.total_profit;
     }
   });
-  d3.select("#oneRun").on('click', function() {
-    start(1);
-    return false;
-  });
-  d3.select("#tenRuns").on('click', function() {
-    start(10);
-    return false;
-  });
-  d3.select("#hundredRuns").on('click', function() {
-    start(100);
-    return false;
-  });
-  d3.select("#fiveHundredRuns").on('click', function() {
-    start(500);
-    return false;
-  });
-  d3.select("#stopButton").on('click', function() {
-    stop();
-    return false;
-  });
-  d3.select("#clearButton").on('click', function() {
-    clear();
-    return false;
-  });
-  d3.select("#defaultsButton").on('click', function() {
-    clear();
-    setToDefaults();
-    return false;
-  });
-  d3.select("#toggleDistributions").on('click', function() {
-    clear();
-    toggleDistributions();
-    return false;
-  });
   setToDefaults();
-  histogram.prototype.distributionUpdated = distributionUpdated;
-  return distributionUpdated();
+  slider.prototype.distributionUpdated = distributionUpdated;
+  return d3.select("#calculate").on('click', function() {
+    distributionUpdated();
+    return false;
+  });
 };
 distributionUpdated = function() {
   stop();
-  worker = new Worker('../js/calculation.js');
+  worker = new Worker('../js/inverse-calculation.js');
   worker.onmessage = function(event) {
     var chart, name, _results;
     console.log(event.data);
@@ -275,17 +222,7 @@ setToDefaults = function() {
     if (!__hasProp.call(defaults, name)) continue;
     values = defaults[name];
     chart = charts[name];
-    _results.push(chart != null ? (values.distribution === "normal" ? (chart.opts.mean = values.mean, chart.opts.standard_deviation = values.sd) : values.distribution === "fixed" ? chart.opts.mean = values.value : void 0, chart.drawDistributionLine(), chart.allow_distribution_to_be_altered()) : void 0);
-  }
-  return _results;
-};
-toggleDistributions = function() {
-  var chart, name, _results;
-  _results = [];
-  for (name in charts) {
-    if (!__hasProp.call(charts, name)) continue;
-    chart = charts[name];
-    _results.push(chart.toggleDistributions != null ? chart.toggleDistributions() : void 0);
+    _results.push(chart != null ? (values.distribution === "normal" ? (chart.opts.mean = values.mean, chart.showMedianForValue(chart.opts.mean)) : values.distribution === "fixed" ? (chart.opts.mean = values.value, chart.showMedianForValue(chart.opts.mean)) : void 0, chart.drawDistributionLine(), chart.allow_distribution_to_be_altered()) : void 0);
   }
   return _results;
 };
@@ -301,8 +238,16 @@ medians = function() {
         distribution: 'fixed',
         value: chart.opts.mean
       };
-    } else {
-      parameters[name] = defaultDistribution;
+    } else if (defaultDistribution.value != null) {
+      parameters[name] = {
+        distribution: 'fixed',
+        value: defaultDistribution.value
+      };
+    } else if (defaultDistribution.mean != null) {
+      parameters[name] = {
+        distribution: 'fixed',
+        value: defaultDistribution.mean
+      };
     }
   }
   return parameters;
@@ -336,7 +281,7 @@ start = function(number_of_iterations) {
   }
   stop();
   d3.selectAll("rect.selected").classed('selected', false);
-  worker = new Worker('../js/calculation.js');
+  worker = new Worker('../js/inverse-calculation.js');
   running = true;
   worker.onmessage = function(event) {
     var chart, name;
@@ -359,7 +304,7 @@ start = function(number_of_iterations) {
   });
 };
 clear = function() {
-  var chart, name;
+  var chart, iterations, name;
   stop();
   iterations = [];
   for (name in charts) {

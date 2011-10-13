@@ -37,6 +37,24 @@ scatterplot.defaults =
   y_axis_suffix: ""
   y_axis_title: null
 
+slider.defaults =
+  tag:      "body"
+  width:    250
+  height:   125
+  padding:  35
+  x_min:    0
+  x_max:    300
+  y_min:    0
+  y_max:    20
+  x_ticks:  10
+  y_ticks:  5
+  property: (d) -> d
+  attempts: 500
+  bins:     50
+  title:    null
+  x_axis_suffix: ""
+  x_axis_title: null
+
 defaults = { 
   "subsidy": {distribution: 'fixed', "value": 94 }
   "capital_cost":{distribution: 'normal', "mean":2211,"sd":(2211-1756)},
@@ -57,6 +75,8 @@ worker = null
 
 setup = () ->
     # Create the charts
+    charts['subsidy'] = new histogram(tag:'#subsidy', x_axis_title:"Level of subsidy (£/MWh)", x_max: 200, property: (d) -> d.subsidy)
+    
     charts['capital_cost'] = new histogram(tag:'#capital', x_axis_title:"Capital cost (£/kW)", x_max: 7500, property: (d) -> d.capital_cost)
     charts['operating_cost'] = new histogram(tag:"#operating", x_axis_title:"Operating cost (£/kW/yr)", property: (d) -> d.operating_cost)
 #    charts['fuel_cost'] = new histogram(tag:"#fuel",x_axis_title:"Fuel cost (£/MWh)", property: (d) -> d.fuel_cost)
@@ -65,9 +85,9 @@ setup = () ->
     charts['hurdle_rate'] = new histogram(tag:"#hurdle", x_axis_title:"Investor's hurdle rate (apr)", x_axis_suffix: "%", x_max: 20, property:(d) -> d.hurdle_rate)
     charts['capital_available'] = new histogram(tag: "#quantity", x_axis_title:"Investor's capital available £bn", x_max: 50, property:(d) -> d.capital_available)
     charts['price'] = new histogram(tag: "#price", x_axis_title:"Price of electricity £/MWh", property:(d) -> d.price)   
-    charts['energy_delivered'] = new histogram(tag: "#energyDelivered", x_axis_title: "Energy delivered TWh", x_max:70, width: 500,  property: (d) -> d.energyDelivered)
-    charts['public_spend'] = new histogram(tag: "#publicSpend", x_axis_title: "Public expenditure £bn", x_max: 7, width: 500, property: (d) -> d.publicSpend)
-    charts['total_profit'] = new histogram(tag: "#totalProfit", x_axis_title: "Private 'excess' profit £bn", x_max: 7, width: 500, property: (d) -> d.totalProfit)
+    charts['energy_delivered'] = new histogram(tag: "#energyDelivered", x_axis_title: "Energy delivered TWh", x_max:70, width: 500,  property: (d) -> d.energy_delivered)
+    charts['public_spend'] = new histogram(tag: "#publicSpend", x_axis_title: "Public expenditure £bn", x_max: 7, width: 500, property: (d) -> d.public_spend)
+    charts['total_profit'] = new histogram(tag: "#totalProfit", x_axis_title: "Private 'excess' profit £bn", x_max: 7, width: 500, property: (d) -> d.total_profit)
     
     # 
     # charts['public_spend_against_energy'] = new scatterplot(tag: '#spendEnergyDelivered', x_axis_title: "Public expenditure £bn", y_axis_title: "Energy delivered TWh", x_max: 10, y_max: 100, x_property: ((d) -> d.publicSpend), y_property: ((d) -> d.energyDelivered))
@@ -104,8 +124,11 @@ setToDefaults = () ->
   for own name, values of defaults
     chart = charts[name]
     if chart?
-      chart.opts.mean = values.mean
-      chart.opts.standard_deviation = values.sd
+      if values.distribution == "normal"
+        chart.opts.mean = values.mean
+        chart.opts.standard_deviation = values.sd
+      else if values.distribution == "fixed"
+        chart.opts.mean = values.value
       chart.drawDistributionLine()
       chart.allow_distribution_to_be_altered()
 

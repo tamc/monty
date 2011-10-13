@@ -98,6 +98,14 @@ running = false;
 worker = null;
 setup = function() {
   charts = {};
+  charts['subsidy'] = new slider({
+    tag: '#subsidy',
+    x_axis_title: "Level of subsidy (£/MWh)",
+    x_max: 200,
+    property: function(d) {
+      return d.subsidy;
+    }
+  });
   charts['capital_cost'] = new slider({
     tag: '#capital',
     x_axis_title: "Capital cost (£/kW)",
@@ -160,7 +168,7 @@ setup = function() {
     x_max: 70,
     width: 500,
     property: function(d) {
-      return d.energyDelivered;
+      return d.energy_delivered;
     }
   });
   charts['public_spend'] = new slider({
@@ -169,7 +177,7 @@ setup = function() {
     x_max: 7,
     width: 500,
     property: function(d) {
-      return d.publicSpend;
+      return d.public_spend;
     }
   });
   charts['total_profit'] = new slider({
@@ -178,7 +186,7 @@ setup = function() {
     x_max: 7,
     width: 500,
     property: function(d) {
-      return d.totalProfit;
+      return d.total_profit;
     }
   });
   setToDefaults();
@@ -190,8 +198,6 @@ distributionUpdated = function() {
   worker = new Worker('../js/calculation.js');
   worker.onmessage = function(event) {
     var chart, name, _results;
-    console.log("Calculated results");
-    console.log(event.data);
     _results = [];
     for (name in charts) {
       if (!__hasProp.call(charts, name)) continue;
@@ -213,7 +219,7 @@ setToDefaults = function() {
     if (!__hasProp.call(defaults, name)) continue;
     values = defaults[name];
     chart = charts[name];
-    _results.push(chart != null ? (chart.opts.mean = values.mean, chart.opts.standard_deviation = values.sd, chart.drawDistributionLine(), chart.allow_distribution_to_be_altered()) : void 0);
+    _results.push(chart != null ? (values.distribution === "normal" ? (chart.opts.mean = values.mean, chart.opts.standard_deviation = values.sd) : values.distribution === "fixed" ? chart.opts.mean = values.value : void 0, chart.drawDistributionLine(), chart.allow_distribution_to_be_altered()) : void 0);
   }
   return _results;
 };

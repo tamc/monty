@@ -49,6 +49,11 @@ rect.selected, rect.stickySelected {
   fill: #FF0;
 }
 
+line.selected {
+  fill: none;
+  stroke: #000;
+}
+
 rect.old {
   fill: #ccc;
 }

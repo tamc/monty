@@ -52,14 +52,14 @@ deployment = (@id,@distributions) ->
   @profit = @annualIncome - @annualCost
   if @profit > 0
     @deployment = (@capital_available * 1e9 / @capital_cost) / 1000 # Deployment in MW
-    @energyDelivered = @deployment * @annualOutput / 1000 # Energy delivered in TWh
-    @publicSpend = @energyDelivered * @subsidy / 1000
-    @totalProfit = @profit * @deployment / 1000000
+    @energy_delivered = @deployment * @annualOutput / 1000 # Energy delivered in TWh
+    @public_spend = @energy_delivered * @subsidy / 1000
+    @total_profit = @profit * @deployment / 1000000
   else
     @deployment = 0
-    @energyDelivered = 0
-    @publicSpend = 0
-    @totalProfit = 0
+    @energy_delivered = 0
+    @public_spend = 0
+    @total_profit = 0
     
   return this
 
