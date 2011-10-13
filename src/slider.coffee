@@ -71,8 +71,24 @@ slider = (@opts = {}) ->
     click_rect.on('click.distribution', distribution_move )
 
   # Draws a distribution line
-  @drawDistributionLine = () ->    
-    false
+  @drawDistributionLine = () ->
+    console.log("Trying to draw distributoin") 
+    return unless that.opts.mean?  && that.opts.standard_deviation?
+    
+    svg.append("svg:line")
+        .attr('class','distribution')
+        .attr("x1", x(that.opts.mean - (3*that.opts.standard_deviation)))
+        .attr("x2", x(that.opts.mean - (3*that.opts.standard_deviation)))
+        .attr("y1", 0)
+        .attr("y2", that.opts.height);
+
+    svg.append("svg:line")
+        .attr('class','distribution')
+        .attr("x1", x(that.opts.mean + (3*that.opts.standard_deviation)))
+        .attr("x2", x(that.opts.mean + (3*that.opts.standard_deviation)))
+        .attr("y1", 0)
+        .attr("y2", that.opts.height);
+    
 
   @showMedianForDatum = (d) ->
     
@@ -89,8 +105,8 @@ slider = (@opts = {}) ->
       .attr('y2', that.opts.height)
 
   @distribution = () ->
-    if @opts.mean? && @opts.standard_deviation?
-      {distribution: 'normal', mean: @opts.mean, sd:@opts.standard_deviation}
+    if @opts.mean?
+      {distribution: 'fixed', value: @opts.mean}
     else
       {}
   

@@ -53,7 +53,7 @@ rect.old {
   fill: #ccc;
 }
 
-path.distribution {
+path.distribution, line.distribution {
   fill: none;
   stroke: #f00;
 }

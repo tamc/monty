@@ -67,9 +67,9 @@ setup = () ->
   charts['capital_available'] = new slider(tag: "#quantity", x_axis_title:"Investor's capital available £bn", x_max: 50, property:(d) -> d.capital_available)
   charts['price'] = new slider(tag: "#price", x_axis_title:"Price of electricity £/MWh", property:(d) -> d.price)   
   
-  charts['energy_delivered'] = new slider(tag: "#energyDelivered", x_axis_title: "Energy delivered TWh", x_max:70, width: 500, height: 200,  property: (d) -> d.energyDelivered)
-  charts['public_spend'] = new slider(tag: "#publicSpend", x_axis_title: "Public expenditure £bn", x_max: 7, width: 500, height: 125, property: (d) -> d.publicSpend)
-  charts['total_profit'] = new slider(tag: "#totalProfit", x_axis_title: "Private 'excess' profit £bn", x_max: 7, width: 500, height: 125, property: (d) -> d.totalProfit)
+  charts['energy_delivered'] = new slider(tag: "#energyDelivered", x_axis_title: "Energy delivered TWh", x_max:70, width: 500, property: (d) -> d.energyDelivered)
+  charts['public_spend'] = new slider(tag: "#publicSpend", x_axis_title: "Public expenditure £bn", x_max: 7, width: 500, property: (d) -> d.publicSpend)
+  charts['total_profit'] = new slider(tag: "#totalProfit", x_axis_title: "Private 'excess' profit £bn", x_max: 7, width: 500, property: (d) -> d.totalProfit)
 
 
   # charts['public_spend_against_energy'] = new scatterplot(tag: '#spendEnergyDelivered', x_axis_title: "Public expenditure £bn", y_axis_title: "Energy delivered TWh", x_max: 10, y_max: 100, x_property: ((d) -> d.publicSpend), y_property: ((d) -> d.energyDelivered))

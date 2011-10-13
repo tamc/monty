@@ -40,7 +40,12 @@ slider = function(opts) {
     return click_rect.on('click.distribution', distribution_move);
   };
   this.drawDistributionLine = function() {
-    return false;
+    console.log("Trying to draw distributoin");
+    if (!((that.opts.mean != null) && (that.opts.standard_deviation != null))) {
+      return;
+    }
+    svg.append("svg:line").attr('class', 'distribution').attr("x1", x(that.opts.mean - (3 * that.opts.standard_deviation))).attr("x2", x(that.opts.mean - (3 * that.opts.standard_deviation))).attr("y1", 0).attr("y2", that.opts.height);
+    return svg.append("svg:line").attr('class', 'distribution').attr("x1", x(that.opts.mean + (3 * that.opts.standard_deviation))).attr("x2", x(that.opts.mean + (3 * that.opts.standard_deviation))).attr("y1", 0).attr("y2", that.opts.height);
   };
   this.showMedianForDatum = function(d) {
     var mean;
@@ -49,11 +54,10 @@ slider = function(opts) {
     return mean.transition().duration(500).attr('x1', x(that.opts.property(d))).attr('x2', x(that.opts.property(d))).attr('y1', 0).attr('y2', that.opts.height);
   };
   this.distribution = function() {
-    if ((this.opts.mean != null) && (this.opts.standard_deviation != null)) {
+    if (this.opts.mean != null) {
       return {
-        distribution: 'normal',
-        mean: this.opts.mean,
-        sd: this.opts.standard_deviation
+        distribution: 'fixed',
+        value: this.opts.mean
       };
     } else {
       return {};
