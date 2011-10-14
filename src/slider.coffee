@@ -75,19 +75,12 @@ slider = (@opts = {}) ->
   @drawDistributionLine = () ->
     return unless that.opts.mean?  && that.opts.standard_deviation?
     
-    svg.append("svg:line")
+    svg.append("svg:rect")
         .attr('class','distribution')
-        .attr("x1", x(that.opts.mean - (3*that.opts.standard_deviation)))
-        .attr("x2", x(that.opts.mean - (3*that.opts.standard_deviation)))
-        .attr("y1", 0)
-        .attr("y2", that.opts.height);
-
-    svg.append("svg:line")
-        .attr('class','distribution')
-        .attr("x1", x(that.opts.mean + (3*that.opts.standard_deviation)))
-        .attr("x2", x(that.opts.mean + (3*that.opts.standard_deviation)))
-        .attr("y1", 0)
-        .attr("y2", that.opts.height);
+        .attr("x", x(that.opts.mean - (3*that.opts.standard_deviation)))
+        .attr("y", 0)
+        .attr("width", x(that.opts.mean + (3*that.opts.standard_deviation)) -  x(that.opts.mean - (3*that.opts.standard_deviation))  )
+        .attr("height", that.opts.height);
     
   @showMedianForDatum = (d) ->
     @showMedianForValue(that.opts.property(d))
