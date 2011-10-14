@@ -1,7 +1,7 @@
 var histogram;
 var __hasProp = Object.prototype.hasOwnProperty;
 histogram = function(opts) {
-  var block_height, block_mouseout, block_mouseover, block_width, click_rect, count, distribution_displayed, distribution_move, empty, iteration_to_id, key, nesting_operator, point_group, rect, selecting, selection_label, selection_mousedown, selection_mousemove, selection_mouseup, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x0, x1, x_step, xrule, y, y_axis_group, yrule, _ref;
+  var block_mouseout, block_mouseover, block_width, click_rect, count, distribution_displayed, distribution_move, empty, iteration_to_id, key, nesting_operator, point_group, rect, selecting, selection_label, selection_mousedown, selection_mousemove, selection_mouseup, svg, tag, that, value, values_to_frequencies, values_to_ids, x, x0, x1, x_step, xrule, y, y_axis_group, yrule, _ref;
   this.opts = opts != null ? opts : {};
   _ref = histogram.defaults;
   for (key in _ref) {
@@ -20,7 +20,11 @@ histogram = function(opts) {
     return Math.round(that.opts.property(d) / x_step) * x_step;
   });
   block_width = x(x_step) - x(0);
-  block_height = (this.opts.height / this.opts.y_max) / (this.opts.attempts / 100);
+  this.setBlockHeight = function(attempts) {
+    this.opts.attempts = attempts;
+    return this.block_height = (this.opts.height / this.opts.y_max) / (this.opts.attempts / 100);
+  };
+  this.setBlockHeight(this.opts.attempts);
   tag = d3.select(this.opts.tag);
   if (this.opts.title != null) {
     tag.append("h2").text(this.opts.title);
@@ -90,6 +94,9 @@ histogram = function(opts) {
   };
   this.showMedianForDatum = function(d) {
     var mean;
+    if (that.opts.standard_deviation != null) {
+      return;
+    }
     mean = svg.selectAll('line.median').data([1]);
     mean.enter().append('svg:line').attr('class', 'median');
     return mean.transition().duration(500).attr('x1', x(that.opts.property(d))).attr('x2', x(that.opts.property(d))).attr('y1', 0).attr('y2', that.opts.height);
@@ -214,8 +221,8 @@ histogram = function(opts) {
     frequencies.enter().append("svg:rect").attr("class", function(d) {
       return "block block" + d.id;
     }).attr("y", function(d, i) {
-      return that.opts.height - ((i + 1) * block_height);
-    }).attr("width", block_width).attr("height", block_height).style("fill", "yellow").style('pointer-events', 'all').on('mouseover', block_mouseover).on('mouseout', block_mouseout).transition().duration(1000).style("fill", "grey");
+      return that.opts.height - ((i + 1) * that.block_height);
+    }).attr("width", block_width).attr("height", that.block_height).style("fill", "yellow").style('pointer-events', 'all').on('mouseover', block_mouseover).on('mouseout', block_mouseout).transition().duration(1000).style("fill", "grey");
     return frequencies.exit().remove();
   };
   distribution_displayed = true;

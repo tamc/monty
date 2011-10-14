@@ -16,7 +16,12 @@ histogram = (@opts = {}) ->
   x_step = (x.domain()[1] - x.domain()[0])/@opts.bins
   nesting_operator = d3.nest().key((d) -> Math.round(that.opts.property(d) / x_step) * x_step )
   block_width = x(x_step) - x(0)
-  block_height = (@opts.height / @opts.y_max) / (@opts.attempts / 100)
+  
+  @setBlockHeight = (attempts) ->
+    @opts.attempts = attempts
+    @block_height = (@opts.height / @opts.y_max) / (@opts.attempts / 100)
+  
+  @setBlockHeight(@opts.attempts)
   
   # Start the drawing by setting up the surround
   tag = d3.select(@opts.tag)
@@ -142,6 +147,8 @@ histogram = (@opts = {}) ->
     that.distributionUpdated() if that.distributionUpdated?
   
   @showMedianForDatum = (d) ->
+    return if that.opts.standard_deviation?
+    
     mean = svg.selectAll('line.median')
             .data([1])
     
@@ -289,12 +296,13 @@ histogram = (@opts = {}) ->
         
     frequencies.enter().append("svg:rect")
         .attr("class",(d) -> "block block#{d.id}")
-        .attr("y", (d,i) -> that.opts.height - ((i+1)*block_height) )
+        .attr("y", (d,i) -> that.opts.height - ((i+1)*that.block_height) )
         .attr("width",block_width)
-        .attr("height",block_height)
+        .attr("height",that.block_height)
         .style("fill", "yellow")
         .style('pointer-events','all')
         .on('mouseover',block_mouseover)
+        #.on('mousedown',selection_mousedown)
         .on('mouseout',block_mouseout)        
         .transition()
           .duration(1000)
