@@ -5,6 +5,10 @@ defaults["energy_delivered"] = {
   distribution: 'fixed',
   "value": 20
 };
+defaults["total_profit"] = {
+  distribution: 'fixed',
+  "value": 0
+};
 distributionUpdated = function() {
   var worker;
   stop();

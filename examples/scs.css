@@ -38,7 +38,6 @@ rect {
 rect.block {
   fill: #aaa;
   stroke: none;
-  pointer-events: all;  
 }
 
 rect.selected, rect.stickySelected {
