@@ -77,7 +77,7 @@ distributionUpdated = () ->
   stop()
   worker = new Worker('../js/calculation.js')
   worker.onmessage = (event) ->
-    console.log event.data
+    # console.log JSON.stringify(event.data)
     for own name, chart of charts  
       chart.showMedianForDatum(event.data)
   worker.postMessage(starting_id: 1, number_of_iterations: 1, distributions: medians());

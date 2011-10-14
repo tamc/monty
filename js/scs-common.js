@@ -131,7 +131,6 @@ distributionUpdated = function() {
   worker = new Worker('../js/calculation.js');
   worker.onmessage = function(event) {
     var chart, name, _results;
-    console.log(event.data);
     _results = [];
     for (name in charts) {
       if (!__hasProp.call(charts, name)) continue;

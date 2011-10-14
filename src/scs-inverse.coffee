@@ -31,4 +31,5 @@ setup = () ->
   setToDefaults()
   slider.prototype.distributionUpdated = distributionUpdated
   d3.select("#calculate").on('click',() -> distributionUpdated(); return false)
+  
 
