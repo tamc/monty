@@ -235,7 +235,7 @@ histogram = (@opts = {}) ->
     
     point_group.selectAll("rect.block").each(filter)
     
-    selection_label.text("Selected #{count} out of #{that.data.length} (#{Math.round((count/that.data.length)*100)}%)")
+    selection_label.text("#{count}/#{that.data.length} = #{Math.round((count/that.data.length)*100)}%")
     
   selection_mouseup = () ->
     return unless selecting

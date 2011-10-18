@@ -164,7 +164,7 @@ histogram = function(opts) {
     };
     d3.selectAll("rect.selected").classed("selected", false).style("fill", "grey");
     point_group.selectAll("rect.block").each(filter);
-    return selection_label.text("Selected " + count + " out of " + that.data.length + " (" + (Math.round((count / that.data.length) * 100)) + "%)");
+    return selection_label.text("" + count + "/" + that.data.length + " = " + (Math.round((count / that.data.length) * 100)) + "%");
   };
   selection_mouseup = function() {
     if (!selecting) {

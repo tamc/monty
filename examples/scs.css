@@ -54,6 +54,10 @@ line.selected {
   stroke: #000;
 }
 
+text.selection {
+  font-size: 16pt;
+}
+
 rect.old {
   fill: #ccc;
 }
