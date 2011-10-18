@@ -43,16 +43,14 @@ rect.distribution {
 
 rect.block {
   fill: #aaa;
-  stroke: none;
+  stroke-width: 0.125;
+  stroke: #777;
 }
 
 rect.selected, rect.stickySelected {
-  stroke: none;
-  fill: #F00;
 }
 
 line.selected {
-  fill: none;
   stroke: #000;
 }
 

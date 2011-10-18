@@ -10,7 +10,7 @@ body {
   background: #000;
   position: relative;
   width: 1024px;
-  height: 800px;
+  height: 728px;
   margin: auto;
   overflow: hidden;
 }
@@ -19,7 +19,7 @@ iframe {
   border: none;
   position: absolute;
   width: 1024px;
-  height: 800px;
+  height: 728px;
   background: #fff;
 /*  -moz-transition-property: -moz-transform, opacity;
   -moz-transition-duration: 500ms;
@@ -126,7 +126,8 @@ d3.select(window).on("resize", resize).on("hashchange", function hashchange() {
 });
 
 function resize() {
-  d3.select("body").style("margin-top", (window.innerHeight - 800) / 3 + "px");
+  console.log(window.innerHeight);
+  d3.select("body").style("margin-top", (window.innerHeight - 728) / 3 + "px");
 }
 
 function step(delta) {
