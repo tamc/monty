@@ -2,6 +2,16 @@ body {
   font: 10px sans-serif;
 }
 
+#intro h1, #intro h2, #intro h3 {
+  text-align: center;
+}
+
+#intro h1 {
+  margin-top: 100px;
+  font-size: 500%;
+}
+
+
 h2 {
   width: 100%;
   text-align: center;

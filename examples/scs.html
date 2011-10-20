@@ -78,6 +78,7 @@ iframe {
     <script type="text/javascript">
 
 var slides = [
+  "scs-intro.html",
   "scs-inverse.html",
   "scs-sensitivity.html",
   "scs-fullmonty.html",
@@ -138,7 +139,7 @@ d3.select(window).on("resize", resize).on("hashchange", function hashchange() {
 });
 
 function resize() {
-  d3.select("body").style("margin-top", (window.innerHeight - 728) / 3 + "px");
+  // d3.select("body").style("margin-top", (window.innerHeight - 728) / 3 + "px");
 }
 
 function step(delta) {
