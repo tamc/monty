@@ -10,22 +10,32 @@ body {
   background: #000;
   position: relative;
   width: 1024px;
+  height: 3000px;
   top: 0px;
   margin: auto;
-  overflow: hidden;
+  /*overflow: hidden;*/
 }
 
 iframe {
   border: none;
   position: absolute;
   width: 1024px;
-  height: 1200px;
+  height: 2800px;
   background: #fff;
 /*  -moz-transition-property: -moz-transform, opacity;
   -moz-transition-duration: 500ms;
   -webkit-transition-property: -webkit-transform, opacity;
   -webkit-transition-duration: 500ms;
 */}
+
+#clock {
+  position: absolute;
+  right: 0;
+  top: 0;
+  background-color: white;
+  color: black;
+  z-index: 1000;
+}
 
 #about {
   font: 14px "Helvetica Neue";
@@ -59,6 +69,7 @@ iframe {
     </style>
   </head>
   <body>
+    <div id='clock'></div>
     <iframe id="previous"></iframe>
     <iframe id="current"></iframe>
     <iframe id="next"></iframe>
@@ -78,7 +89,8 @@ var previous = d3.select("#previous"),
     query = "?" + Date.now(),
     previousIndex,
     currentIndex = +location.hash.substring(1) || 0,
-    nextIndex;
+    nextIndex,
+    clock = 0;
 
 resize();
 step(0);
@@ -126,7 +138,7 @@ d3.select(window).on("resize", resize).on("hashchange", function hashchange() {
 });
 
 function resize() {
-  // d3.select("body").style("margin-top", (window.innerHeight - 728) / 3 + "px");
+  d3.select("body").style("margin-top", (window.innerHeight - 728) / 3 + "px");
 }
 
 function step(delta) {
